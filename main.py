@@ -13,29 +13,31 @@ from pyniryo import NiryoRobot, uncompress_image, ConveyorDirection, ObjectColor
 # CONFIGURATION ET CONNEXION AU ROBOT NIRYO
 # ==========================================
 ROBOT_IP = '169.254.200.200'
-WORKSPACE_NAME = "convoyeur_bonbon"
+WORKSPACE_NAME = "scienceCONVOYER"
 
 # Poses
-OBSERVATION_POSE = [0.106, -0.059, 0.28, -2.686, 1.406, 2.691]
-PLATEAU_POSE = [0.13, 0.251, 0.069, -2.368, 1.48, -1.596]
+OBSERVATION_POSE = [0.187, -0.011, 0.226, 3.077, 1.035, 2.995]
+PLATEAU_POSE = [0.047, 0.268, 0.089, -2.87, 1.357, -1.382]
+PHOTO_POSE = [0, 0.204, 0.262, 3.012, 1.219, -1.762]
+INITIAL_POSE = [0.165, 0, 0.179, 0.02, 0.769, -0.001]
 
 try:
-    print(f"🔌 Tentative de connexion au robot sur {ROBOT_IP}...")
+    print(f"Tentative de connexion au robot sur {ROBOT_IP}...")
     robot = NiryoRobot(ROBOT_IP)
     robot.calibrate_auto()
     robot.update_tool()
     
     conveyor_id = robot.set_conveyor()
     
-    print("🤖 Positionnement en mode observation...")
-    robot.move_pose(PoseObject(*OBSERVATION_POSE))
+    print("Positionnement en mode observation...")
+    robot.move(PoseObject(*OBSERVATION_POSE))
     
     ROBOT_CONNECTE = True
-    print("✅ Robot connecté, calibré et prêt !")
+    print("Robot connecté, calibré et prêt !")
 
 except Exception as e:
-    print(f"⚠️ Impossible de se connecter au robot : {e}")
-    print("⚠️ Démarrage du serveur web en mode SIMULATION.")
+    print(f"Impossible de se connecter au robot : {e}")
+    print("Démarrage du serveur web en mode SIMULATION.")
     ROBOT_CONNECTE = False
     robot = None
     conveyor_id = None
@@ -61,13 +63,13 @@ async def afficher_accueil(request: Request):
 @app.post("/saluer")
 async def saluer_enfant(enfant: InfoEnfant):
     time.sleep(1.5)
-    print(f"👦 Nouvelle session pour : {enfant.prenom}")
+    print(f"Nouvelle session pour : {enfant.prenom}")
     return {"status": "ok", "message": f"Bonjour {enfant.prenom}"}
 
 @app.post('/choix')
 async def choix_enfant(choixEnfant: ChoixEnfant):
     global commande_actuelle
-    print(f"📦 Commande reçue : {choixEnfant.choixBb}")
+    print(f"Commande reçue : {choixEnfant.choixBb}")
     
     # On enregistre la commande pour le robot
     commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
@@ -79,20 +81,21 @@ async def choix_enfant(choixEnfant: ChoixEnfant):
 @app.post('/valider_chargement')
 async def demarrer_tri():
     global commande_actuelle
-    print("🚀 L'enfant a cliqué sur 'C'est prêt !'")
+    print("L'enfant a cliqué sur 'C'est prêt !'")
     
     # ---------------- SIMULATION ----------------
     if not ROBOT_CONNECTE:
-        print("[SIMULATION] ⚙️ Le tapis roulant démarre virtuellement...")
+        print("[SIMULATION] Le tapis roulant démarre virtuellement...")
         time.sleep(3) 
         # On simule un timeout si on demande trop de bonbons
         if sum(commande_actuelle.values()) > 5:
             return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
         return {"status": "ok", "message": "Tri terminé !", "photo": None}
     # --------------------------------------------
-
+    # remise en position d'observation
+    robot.move(PoseObject(*OBSERVATION_POSE))
     # ----------- LOGIQUE RÉELLE ROBOT -----------
-    print("⚙️ Démarrage du convoyeur (vitesse 50)...")
+    print("Démarrage du convoyeur (vitesse 50)...")
     robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
     
     time_start = time.time()
@@ -102,14 +105,14 @@ async def demarrer_tri():
     
     while sum(commande_actuelle.values()) > 0:
         # Vérification du timeout (25 secondes)
-        if time.time() - time_start > 25:
-            print("❌ Erreur : Timeout de 25s dépassé.")
+        if time.time() - time_start > 15:
+            print("Erreur : Timeout de 25s dépassé.")
             robot.stop_conveyor(conveyor_id)
             return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
             
         try:
             # On cherche N'IMPORTE QUEL objet sur le tapis
-            has_obj, obj_pose, obj_shape, obj_color = robot.get_target_pose_from_cam(
+            has_obj, obj_pose, _, obj_color = robot.get_target_pose_from_cam(
                 WORKSPACE_NAME,
                 height_offset=0.0005,
                 shape=ObjectShape.ANY,
@@ -119,12 +122,12 @@ async def demarrer_tri():
             has_obj = False
             
         if has_obj:
-            color_str = obj_color.name # Retourne "GREEN", "RED" ou "BLUE" (ou "ANY" si non reconnu)
+            color_str = obj_color.name 
             couleur_fr = inv_mapping.get(color_str)
             
             # Si on reconnaît la couleur ET qu'il nous en faut encore dans la commande
             if couleur_fr and commande_actuelle.get(couleur_fr, 0) > 0:
-                print(f"🎯 Bonbon {couleur_fr} détecté ! Prise en cours...")
+                print(f"Bonbon {couleur_fr} détecté ! Prise en cours...")
                 
                 robot.stop_conveyor(conveyor_id)
                 robot.pick(obj_pose)
@@ -146,17 +149,17 @@ async def demarrer_tri():
         time.sleep(0.1)
 
     
-    print("✅ Tri terminé avec succès !")
+    print("Tri terminé avec succès !")
     if ROBOT_CONNECTE:
         robot.stop_conveyor(conveyor_id)
         
-    print("📸 Prise de la photo souvenir...")
+    print(" Prise de la photo souvenir...")
     photo_b64 = None
     
     if ROBOT_CONNECTE:
         try:
             # On se met en position pour voir le résultat
-            robot.move_pose(PoseObject(*OBSERVATION_POSE))
+            robot.move(PoseObject(*PHOTO_POSE))
             time.sleep(1) # Laisse le temps à la caméra de faire l'auto-focus/balance des blancs
             
             img_compressed = robot.get_img_compressed()
@@ -166,7 +169,7 @@ async def demarrer_tri():
             _, buffer = cv2.imencode('.jpg', img_cv2)
             photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
         except Exception as e:
-            print(f"⚠️ Erreur lors de la prise de photo: {e}")
+            print(f"Erreur lors de la prise de photo: {e}")
     else:
         # Fausse image générée via OpenCV pour le mode simulation
         img_sim = np.zeros((400, 600, 3), dtype=np.uint8)
@@ -175,4 +178,5 @@ async def demarrer_tri():
         _, buffer = cv2.imencode('.jpg', img_sim)
         photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
 
+    robot.move(PoseObject(*INITIAL_POSE))
     return {"status": "ok", "message": "Tous les bonbons ont été triés !", "photo": photo_b64}
