@@ -1,10 +1,13 @@
 import time
+import cv2
+import base64
+import numpy as np
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from pyniryo import NiryoRobot, ConveyorDirection, ObjectColor, ObjectShape, PoseObject
+from pyniryo import NiryoRobot, uncompress_image, ConveyorDirection, ObjectColor, ObjectShape, PoseObject
 
 # ==========================================
 # CONFIGURATION ET CONNEXION AU ROBOT NIRYO
@@ -85,7 +88,7 @@ async def demarrer_tri():
         # On simule un timeout si on demande trop de bonbons
         if sum(commande_actuelle.values()) > 5:
             return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
-        return {"status": "ok", "message": "Tri terminé !"}
+        return {"status": "ok", "message": "Tri terminé !", "photo": None}
     # --------------------------------------------
 
     # ----------- LOGIQUE RÉELLE ROBOT -----------
@@ -142,6 +145,34 @@ async def demarrer_tri():
         # Petite pause pour ne pas surcharger le processeur
         time.sleep(0.1)
 
+    
     print("✅ Tri terminé avec succès !")
-    robot.stop_conveyor(conveyor_id)
-    return {"status": "ok", "message": "Tous les bonbons ont été triés !"}
+    if ROBOT_CONNECTE:
+        robot.stop_conveyor(conveyor_id)
+        
+    print("📸 Prise de la photo souvenir...")
+    photo_b64 = None
+    
+    if ROBOT_CONNECTE:
+        try:
+            # On se met en position pour voir le résultat
+            robot.move_pose(PoseObject(*OBSERVATION_POSE))
+            time.sleep(1) # Laisse le temps à la caméra de faire l'auto-focus/balance des blancs
+            
+            img_compressed = robot.get_img_compressed()
+            img_cv2 = uncompress_image(img_compressed)
+            
+            # Encodage de l'image OpenCV en base64 pour le web
+            _, buffer = cv2.imencode('.jpg', img_cv2)
+            photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la prise de photo: {e}")
+    else:
+        # Fausse image générée via OpenCV pour le mode simulation
+        img_sim = np.zeros((400, 600, 3), dtype=np.uint8)
+        img_sim[:] = (220, 200, 255) # Fond rose pâle
+        cv2.putText(img_sim, "Mission accomplie !", (80, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (50, 50, 150), 4)
+        _, buffer = cv2.imencode('.jpg', img_sim)
+        photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
+
+    return {"status": "ok", "message": "Tous les bonbons ont été triés !", "photo": photo_b64}

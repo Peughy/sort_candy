@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Quicksand:wght@600;700;900&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/style.css?v=6">
+    <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 
 <body class="flex flex-col items-center justify-center">
@@ -251,8 +251,11 @@
                 <!-- Rempli en JS -->
             </div>
 
-            <button onclick="validerChargement()" class="btn-game btn-game-yellow w-full text-3xl">
-                C'est prêt ! ✅
+            <button onclick="validerChargement()" class="btn-game btn-game-yellow w-full text-3xl mb-4">
+                C'est prêt ! ✨
+            </button>
+            <button onclick="cancelOrder()" class="btn-game w-full text-2xl" style="background-color: #f1f2f6; color: #3D2314; box-shadow: 0px 8px 0px #dcdde1;">
+                ⬅️ Modifier ma commande
             </button>
         </div>
     </div>
@@ -292,8 +295,11 @@
                 <div
                     class="w-full aspect-video bg-gray-200 rounded overflow-hidden relative border-2 border-gray-300 inset-shadow">
                     <!-- Fausse image de la caméra -->
-                    <img src="https://placehold.co/600x400/2ed573/FFFFFF?font=Fredoka&text=Photo+Camera+Robot"
-                        alt="Vue Camera" class="w-full h-full object-cover">
+                    <div id="photo-loading" class="absolute inset-0 bg-yellow-100 flex flex-col items-center justify-center z-10">
+                        <div class="text-4xl animate-bounce-slow mb-2">📸</div>
+                        <p class="font-[Chewy] text-yellow-600 text-xl">Développement...</p>
+                    </div>
+                    <img id="robot-photo" src="" alt="Vue Camera" class="w-full h-full object-cover relative z-0 hidden">
                 </div>
                 <div class="absolute bottom-3 left-0 w-full text-center font-[Chewy] text-gray-500 text-xl">Photo
                     Souvenir</div>
@@ -313,7 +319,7 @@
         <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-red-500 border-8 bg-red-50">
             <h2 class="title-cartoon text-6xl text-red-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Oh non... 😢</h2>
             <p id="error-message-txt" class="text-2xl font-bold mb-6 text-red-800">Je n'ai pas trouvé tous les bonbons !</p>
-            <button onclick="resetApp()" class="btn-game w-full text-2xl" style="background-color: #ff4757; box-shadow: 0px 8px 0px #c0392b;">
+            <button onclick="retryOrder()" class="btn-game w-full text-2xl" style="background-color: #ff4757; box-shadow: 0px 8px 0px #c0392b;">
                 Recommencer 🔄
             </button>
         </div>
@@ -330,7 +336,7 @@
         </div>
     </div>
 
-    <script src="/static/main.js?v=6"></script>
+    <script src="/static/main.js?v=8"></script>
 </body>
 
 </html>

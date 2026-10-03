@@ -149,12 +149,29 @@ async function validerChargement() {
         const data = await response.json();
         
         hideModal('modal-loading');
-        if(data.status === 'error') {
+                if(data.status === 'error') {
             const errMsg = document.getElementById('error-message-txt');
             if(errMsg) errMsg.textContent = data.message;
             showModal('modal-error');
         } else {
             showModal('modal-success');
+            
+            // Gestion de la photo
+            const imgEl = document.getElementById('robot-photo');
+            const loadingEl = document.getElementById('photo-loading');
+            
+            if (imgEl && loadingEl) {
+                imgEl.classList.add('hidden');
+                loadingEl.classList.remove('hidden');
+                
+                if (data.photo) {
+                    imgEl.onload = () => {
+                        loadingEl.classList.add('hidden');
+                        imgEl.classList.remove('hidden');
+                    };
+                    imgEl.src = data.photo;
+                }
+            }
         }
     } catch (e) {
         console.error(e);
@@ -163,7 +180,22 @@ async function validerChargement() {
     }
 }
 
+
+function retryOrder() {
+    hideModal('modal-error');
+    hideModal('modal-success');
+    hideModal('modal-error');
+    hideModal('modal-chargement');
+    hideModal('modal-loading');
+    // Le background est déjà 'screen-menu'
+}
+
+function cancelOrder() {
+    hideModal('modal-chargement');
+}
+
 function resetApp() {
+
     // Remise à zéro
     childName = "";
     document.getElementById('input-prenom').value = "";
@@ -177,6 +209,7 @@ function resetApp() {
     checkCart();
 
     hideModal('modal-success');
+    hideModal('modal-error');
     showScreen('screen-home');
 }
 
