@@ -144,21 +144,23 @@ async function validerChargement() {
     hideModal('modal-chargement');
     showModal('modal-loading');
 
-    console.log(`[ROBOT] TTS: Je vérifie le tapis...`);
-    console.log(`[ROBOT] Caméra activée...`);
-
     try {
-        const response = await fetch('/valider_chargement', {
-            method: 'POST'
-        });
+        const response = await fetch('/valider_chargement', { method: 'POST' });
         const data = await response.json();
-        console.log(`[SERVEUR] :`, data.message);
+        
+        hideModal('modal-loading');
+        if(data.status === 'error') {
+            const errMsg = document.getElementById('error-message-txt');
+            if(errMsg) errMsg.textContent = data.message;
+            showModal('modal-error');
+        } else {
+            showModal('modal-success');
+        }
     } catch (e) {
-        console.error("Erreur de connexion:", e);
+        console.error(e);
+        hideModal('modal-loading');
+        showModal('modal-error');
     }
-
-    hideModal('modal-loading');
-    showModal('modal-success');
 }
 
 function resetApp() {

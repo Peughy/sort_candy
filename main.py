@@ -10,6 +10,11 @@ from pyniryo import NiryoRobot, ConveyorDirection, ObjectColor, ObjectShape, Pos
 # CONFIGURATION ET CONNEXION AU ROBOT NIRYO
 # ==========================================
 ROBOT_IP = '169.254.200.200'
+WORKSPACE_NAME = "convoyeur_bonbon"
+
+# Poses
+OBSERVATION_POSE = [0.106, -0.059, 0.28, -2.686, 1.406, 2.691]
+PLATEAU_POSE = [0.13, 0.251, 0.069, -2.368, 1.48, -1.596]
 
 try:
     print(f"🔌 Tentative de connexion au robot sur {ROBOT_IP}...")
@@ -17,13 +22,10 @@ try:
     robot.calibrate_auto()
     robot.update_tool()
     
-    # Initialisation du convoyeur (tapis roulant)
     conveyor_id = robot.set_conveyor()
     
-    # Position d'attente pour que la caméra puisse voir le tapis
-    OBSERVATION_POSE = [0.106, -0.059, 0.28, -2.686, 1.406, 2.691]
     print("🤖 Positionnement en mode observation...")
-    robot.move(PoseObject(*OBSERVATION_POSE))
+    robot.move_pose(PoseObject(*OBSERVATION_POSE))
     
     ROBOT_CONNECTE = True
     print("✅ Robot connecté, calibré et prêt !")
@@ -39,6 +41,9 @@ except Exception as e:
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Variables globales pour suivre la commande
+commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
 
 class InfoEnfant(BaseModel):
     prenom: str
@@ -58,19 +63,85 @@ async def saluer_enfant(enfant: InfoEnfant):
 
 @app.post('/choix')
 async def choix_enfant(choixEnfant: ChoixEnfant):
+    global commande_actuelle
     print(f"📦 Commande reçue : {choixEnfant.choixBb}")
-    return {"status": "ok", "message": f"Choix reçu, en attente de la validation du chargement."}
+    
+    # On enregistre la commande pour le robot
+    commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
+    for couleur, qte in choixEnfant.choixBb.items():
+        commande_actuelle[couleur] = qte
+        
+    return {"status": "ok", "message": "Choix reçu, en attente du chargement."}
 
 @app.post('/valider_chargement')
 async def demarrer_tri():
+    global commande_actuelle
     print("🚀 L'enfant a cliqué sur 'C'est prêt !'")
     
-    # ACTION ROBOT : On allume ENFIN le tapis roulant !
-    if ROBOT_CONNECTE:
-        print("⚙️ Démarrage du convoyeur (vitesse 50)...")
-        robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
-    else:
+    # ---------------- SIMULATION ----------------
+    if not ROBOT_CONNECTE:
         print("[SIMULATION] ⚙️ Le tapis roulant démarre virtuellement...")
-        time.sleep(3) # On simule un délai pour l'animation côté web
+        time.sleep(3) 
+        # On simule un timeout si on demande trop de bonbons
+        if sum(commande_actuelle.values()) > 5:
+            return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
+        return {"status": "ok", "message": "Tri terminé !"}
+    # --------------------------------------------
+
+    # ----------- LOGIQUE RÉELLE ROBOT -----------
+    print("⚙️ Démarrage du convoyeur (vitesse 50)...")
+    robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
+    
+    time_start = time.time()
+    
+    # Dictionnaire inversé pour lier le retour caméra (ex: GREEN) avec notre code (ex: vert)
+    inv_mapping = {"GREEN": "vert", "RED": "rouge", "BLUE": "bleu"}
+    
+    while sum(commande_actuelle.values()) > 0:
+        # Vérification du timeout (25 secondes)
+        if time.time() - time_start > 25:
+            print("❌ Erreur : Timeout de 25s dépassé.")
+            robot.stop_conveyor(conveyor_id)
+            return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
+            
+        try:
+            # On cherche N'IMPORTE QUEL objet sur le tapis
+            has_obj, obj_pose, obj_shape, obj_color = robot.get_target_pose_from_cam(
+                WORKSPACE_NAME,
+                height_offset=0.0005,
+                shape=ObjectShape.ANY,
+                color=ObjectColor.ANY
+            )
+        except Exception:
+            has_obj = False
+            
+        if has_obj:
+            color_str = obj_color.name # Retourne "GREEN", "RED" ou "BLUE" (ou "ANY" si non reconnu)
+            couleur_fr = inv_mapping.get(color_str)
+            
+            # Si on reconnaît la couleur ET qu'il nous en faut encore dans la commande
+            if couleur_fr and commande_actuelle.get(couleur_fr, 0) > 0:
+                print(f"🎯 Bonbon {couleur_fr} détecté ! Prise en cours...")
+                
+                robot.stop_conveyor(conveyor_id)
+                robot.pick(obj_pose)
+                robot.move(PoseObject(*PLATEAU_POSE))
+                robot.release_with_tool()
+                robot.move(PoseObject(*OBSERVATION_POSE))
+                
+                # On diminue la quantité restante à chercher
+                commande_actuelle[couleur_fr] -= 1
+                
+                # On réinitialise le chronomètre car on vient de trouver un bonbon valide
+                time_start = time.time()
+                
+                # On redémarre le tapis si on n'a pas fini
+                if sum(commande_actuelle.values()) > 0:
+                    robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
         
-    return {"status": "ok", "message": "Le tri a commencé !"}
+        # Petite pause pour ne pas surcharger le processeur
+        time.sleep(0.1)
+
+    print("✅ Tri terminé avec succès !")
+    robot.stop_conveyor(conveyor_id)
+    return {"status": "ok", "message": "Tous les bonbons ont été triés !"}
