@@ -1,0 +1,276 @@
+
+        :root {
+            --primary: #FF5A92;
+            /* Rose bonbon */
+            --primary-dark: #D4396C;
+            --secondary: #FFC933;
+            /* Jaune soleil */
+            --secondary-dark: #D6A420;
+            --bg-top: #A0E5FF;
+            /* Ciel bleu */
+            --bg-bottom: #D1FFC2;
+            /* Herbe douce */
+            --text-dark: #3D2314;
+            /* Marron chocolat pour le texte */
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            color: var(--text-dark);
+            /* Motif de fond léger (pois) */
+            background-image: radial-gradient(rgba(255, 255, 255, 0.4) 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        /* Typographie Cartoon avec contours (stroke) */
+        .title-cartoon {
+            font-family: 'Chewy', cursive;
+            color: white;
+            text-shadow:
+                -3px -3px 0 var(--text-dark),
+                3px -3px 0 var(--text-dark),
+                -3px 3px 0 var(--text-dark),
+                3px 3px 0 var(--text-dark),
+                0px 6px 0px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .subtitle-cartoon {
+            font-family: 'Chewy', cursive;
+            color: var(--secondary);
+            text-shadow:
+                -2px -2px 0 var(--text-dark),
+                2px -2px 0 var(--text-dark),
+                -2px 2px 0 var(--text-dark),
+                2px 2px 0 var(--text-dark);
+        }
+
+        /* Boutons style "Jeu Vidéo" */
+        .btn-game {
+            background-color: var(--primary);
+            color: white;
+            font-family: 'Chewy', cursive;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            padding: 15px 40px;
+            border-radius: 50px;
+            border: 4px solid var(--text-dark);
+            box-shadow: 0px 8px 0px var(--primary-dark), 0px 15px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-shadow: 2px 2px 0px var(--text-dark);
+        }
+
+        .btn-game:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-game:active {
+            transform: translateY(8px);
+            box-shadow: 0px 0px 0px var(--primary-dark), 0px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-game-yellow {
+            background-color: var(--secondary);
+            box-shadow: 0px 8px 0px var(--secondary-dark), 0px 15px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-game-yellow:active {
+            box-shadow: 0px 0px 0px var(--secondary-dark), 0px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Cartes (Panneaux) */
+        .game-panel {
+            background-color: white;
+            border: 4px solid var(--text-dark);
+            border-radius: 30px;
+            box-shadow: 8px 8px 0px rgba(61, 35, 20, 0.15);
+        }
+
+        .candy-card {
+            background-color: white;
+            border: 4px solid var(--text-dark);
+            border-radius: 30px;
+            box-shadow: 0px 8px 0px rgba(61, 35, 20, 0.1);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: visible;
+        }
+
+        .candy-card:hover {
+            transform: translateY(-10px) rotate(-2deg);
+            box-shadow: 0px 15px 0px rgba(61, 35, 20, 0.15);
+        }
+
+        .candy-selected {
+            background-color: #FFF0F5;
+            border-color: var(--primary);
+            box-shadow: 0px 8px 0px var(--primary-dark);
+        }
+
+        /* Contrôles de quantité */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            opacity: 0;
+            transform: scale(0.8) translateY(-20px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            /* Cache les clics quand invisible */
+            height: 0;
+        }
+
+        .qty-control.open {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            height: 60px;
+            margin-top: 15px;
+        }
+
+        .btn-round {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid var(--text-dark);
+            font-size: 1.5rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0px 4px 0px var(--text-dark);
+            transition: transform 0.1s;
+        }
+
+        .btn-round:active {
+            transform: translateY(4px);
+            box-shadow: 0px 0px 0px var(--text-dark);
+        }
+
+        /* Bulles de BD */
+        .speech-bubble {
+            background: white;
+            border: 4px solid var(--text-dark);
+            border-radius: 20px;
+            padding: 15px 25px;
+            position: relative;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 14px 14px 0;
+            border-style: solid;
+            border-color: var(--text-dark) transparent transparent transparent;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -9px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+            z-index: 1;
+        }
+
+        /* Animations utilitaires */
+        .hidden-screen {
+            display: none !important;
+        }
+
+        .animate-bounce-slow {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .animate-pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(-5deg);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUpCustom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes slideUpCustom {
+            0% {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Lueur magique derrière le texte */
+        .glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%);
+            z-index: -1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Input custom */
+        .input-game {
+            border: 4px solid var(--text-dark);
+            border-radius: 20px;
+            font-family: 'Chewy', cursive;
+            box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-game:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(255, 90, 146, 0.3);
+        }
+    
+/* Animations de chargement (loading) */
+.animate-spin-slow { animation: spin 2.5s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

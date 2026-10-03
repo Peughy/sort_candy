@@ -1,0 +1,183 @@
+function showGlobalLoading(message) {
+    const textEl = document.getElementById('loading-text');
+    if (textEl) textEl.textContent = message || "Chargement...";
+    document.getElementById('modal-global-loading').classList.remove('hidden-screen');
+}
+
+function hideGlobalLoading() {
+    document.getElementById('modal-global-loading').classList.add('hidden-screen');
+}
+
+let childName = "";
+const cart = { vert: 0, rouge: 0, bleu: 0 };
+// Couleurs pour les badges
+const colors = { vert: 'bg-green-100 text-green-700', rouge: 'bg-red-100 text-red-700', bleu: 'bg-blue-100 text-blue-700' };
+
+function showScreen(idToShow) {
+    ['screen-home', 'screen-menu'].forEach(id => {
+        document.getElementById(id).classList.add('hidden-screen');
+    });
+    document.getElementById(idToShow).classList.remove('hidden-screen');
+}
+
+function showModal(idToShow) {
+    document.getElementById(idToShow).classList.remove('hidden-screen');
+}
+
+function hideModal(idToHide) {
+    document.getElementById(idToHide).classList.add('hidden-screen');
+}
+
+async function validerPrenom() {
+    const input = document.getElementById('input-prenom').value.trim();
+    if (input === "") {
+        const inputEl = document.getElementById('input-prenom');
+        inputEl.style.transform = 'translateX(-10px)';
+        setTimeout(() => inputEl.style.transform = 'translateX(10px)', 100);
+        setTimeout(() => inputEl.style.transform = 'translateX(0)', 200);
+        return;
+    }
+
+    childName = input;
+
+    showGlobalLoading("Magie en cours... ");
+    hideModal('modal-name');
+
+    try {
+        const response = await fetch('/saluer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prenom: childName })
+        });
+        const data = await response.json();
+        console.log(`[SERVEUR] :`, data.message);
+    } catch (e) {
+        console.error("Erreur de connexion:", e);
+    }
+
+    hideGlobalLoading();
+    document.getElementById('display-name').textContent = childName;
+    showScreen('screen-menu');
+}
+
+function toggleQty(couleur) {
+    const container = document.getElementById(`qty-${couleur}`);
+    const card = document.getElementById(`card-${couleur}`);
+
+    if (container.classList.contains('open')) {
+        // Fermer si déjà ouvert
+        container.classList.remove('open');
+        card.classList.remove('candy-selected');
+    } else {
+        // Ouvrir
+        container.classList.add('open');
+        card.classList.add('candy-selected');
+        if (cart[couleur] === 0) updateQty(couleur, 1);
+    }
+    checkCart();
+}
+
+function updateQty(couleur, change) {
+    let newQty = cart[couleur] + change;
+    if (newQty < 0) newQty = 0;
+    if (newQty > 10) newQty = 10;
+
+    cart[couleur] = newQty;
+
+    // Animation du chiffre
+    const valSpan = document.getElementById(`val-${couleur}`);
+    valSpan.textContent = newQty;
+    valSpan.style.transform = 'scale(1.5)';
+    setTimeout(() => valSpan.style.transform = 'scale(1)', 150);
+
+    if (newQty === 0) {
+        document.getElementById(`qty-${couleur}`).classList.remove('open');
+        document.getElementById(`card-${couleur}`).classList.remove('candy-selected');
+    }
+
+    checkCart();
+}
+
+function checkCart() {
+    const total = cart.vert + cart.rouge + cart.bleu;
+    const btn = document.getElementById('commander-container');
+    if (total > 0) {
+        btn.classList.remove('translate-y-[150%]'); // Fait monter le bouton
+    } else {
+        btn.classList.add('translate-y-[150%]'); // Cache le bouton
+    }
+}
+
+async function commander() {
+    let htmlRecap = "";
+    let textLog = [];
+    let choixBonbon = {};
+
+    for (let [coul, qte] of Object.entries(cart)) {
+        if (qte > 0) {
+            htmlRecap += `<div class="game-panel ${colors[coul]} px-4 py-2 border-2 text-xl font-[Chewy]">${qte} ${coul.toUpperCase()}</div>`;
+            textLog.push(`${qte} ${coul}`);
+            choixBonbon[coul] = qte;
+        }
+    }
+
+    document.getElementById('recap-commande').innerHTML = htmlRecap;
+    showGlobalLoading("Envoi de la commande... 🚀");
+
+
+    try {
+        const response = await fetch('/choix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ choixBb: choixBonbon })
+        });
+        const data = await response.json();
+        console.log(`[SERVEUR] :`, data.message);
+    } catch (e) {
+        console.error("Erreur de connexion:", e);
+    }
+
+    hideGlobalLoading();
+    showModal('modal-chargement');
+}
+
+function validerChargement() {
+    hideModal('modal-chargement');
+    showModal('modal-loading');
+
+    console.log(`[ROBOT] TTS: Je vérifie le tapis...`);
+    console.log(`[ROBOT] Caméra activée...`);
+
+    // Simulation temps de traitement (3s)
+    setTimeout(() => {
+        hideModal('modal-loading');
+        showModal('modal-success');
+    }, 3000);
+}
+
+function resetApp() {
+    // Remise à zéro
+    childName = "";
+    document.getElementById('input-prenom').value = "";
+    cart.vert = 0; cart.rouge = 0; cart.bleu = 0;
+
+    ['vert', 'rouge', 'bleu'].forEach(c => {
+        document.getElementById(`val-${c}`).textContent = "0";
+        document.getElementById(`qty-${c}`).classList.remove('open');
+        document.getElementById(`card-${c}`).classList.remove('candy-selected');
+    });
+    checkCart();
+
+    hideModal('modal-success');
+    showScreen('screen-home');
+}
+
+// Ensure the element exists before adding listener to avoid errors in some edge cases
+document.addEventListener('DOMContentLoaded', () => {
+    const inputPrenom = document.getElementById('input-prenom');
+    if (inputPrenom) {
+        inputPrenom.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') validerPrenom();
+        });
+    }
+});
