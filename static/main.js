@@ -124,7 +124,6 @@ async function commander() {
     document.getElementById('recap-commande').innerHTML = htmlRecap;
     showGlobalLoading("Envoi de la commande... 🚀");
 
-
     try {
         const response = await fetch('/choix', {
             method: 'POST',
@@ -141,18 +140,25 @@ async function commander() {
     showModal('modal-chargement');
 }
 
-function validerChargement() {
+async function validerChargement() {
     hideModal('modal-chargement');
     showModal('modal-loading');
 
     console.log(`[ROBOT] TTS: Je vérifie le tapis...`);
     console.log(`[ROBOT] Caméra activée...`);
 
-    // Simulation temps de traitement (3s)
-    setTimeout(() => {
-        hideModal('modal-loading');
-        showModal('modal-success');
-    }, 3000);
+    try {
+        const response = await fetch('/valider_chargement', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        console.log(`[SERVEUR] :`, data.message);
+    } catch (e) {
+        console.error("Erreur de connexion:", e);
+    }
+
+    hideModal('modal-loading');
+    showModal('modal-success');
 }
 
 function resetApp() {
