@@ -148,6 +148,7 @@ async function validerChargement() {
         const response = await fetch('/valider_chargement', { method: 'POST' });
         const data = await response.json();
         
+        clearInterval(pollInterval);
         hideModal('modal-loading');
                 if(data.status === 'error') {
             const errMsg = document.getElementById('error-message-txt');
@@ -174,6 +175,7 @@ async function validerChargement() {
             }
         }
     } catch (e) {
+        clearInterval(pollInterval);
         console.error(e);
         hideModal('modal-loading');
         showModal('modal-error');

@@ -49,6 +49,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Variables globales pour suivre la commande
 commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
+commande_initiale = {"vert": 0, "rouge": 0, "bleu": 0}
 
 class InfoEnfant(BaseModel):
     prenom: str
@@ -68,29 +69,56 @@ async def saluer_enfant(enfant: InfoEnfant):
 
 @app.post('/choix')
 async def choix_enfant(choixEnfant: ChoixEnfant):
-    global commande_actuelle
+    global commande_actuelle, commande_initiale
     print(f"Commande reçue : {choixEnfant.choixBb}")
     
-    # On enregistre la commande pour le robot
     commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
+    commande_initiale = {"vert": 0, "rouge": 0, "bleu": 0}
     for couleur, qte in choixEnfant.choixBb.items():
         commande_actuelle[couleur] = qte
+        commande_initiale[couleur] = qte
         
     return {"status": "ok", "message": "Choix reçu, en attente du chargement."}
+
+@app.get('/status_tri')
+async def get_status_tri():
+    # Permet au frontend de savoir combien on a ramassé
+    total_initial = sum(commande_initiale.values())
+    total_restant = sum(commande_actuelle.values())
+    total_ramasse = total_initial - total_restant
+    return {
+        "ramasse": total_ramasse,
+        "restant": total_restant,
+        "total": total_initial
+    }
 
 @app.post('/valider_chargement')
 async def demarrer_tri():
     global commande_actuelle
     print("L'enfant a cliqué sur 'C'est prêt !'")
     
-    # ---------------- SIMULATION ----------------
+        # ---------------- SIMULATION ----------------
     if not ROBOT_CONNECTE:
         print("[SIMULATION] Le tapis roulant démarre virtuellement...")
-        time.sleep(3) 
-        # On simule un timeout si on demande trop de bonbons
-        if sum(commande_actuelle.values()) > 5:
-            return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
-        return {"status": "ok", "message": "Tri terminé !", "photo": None}
+        # Simulation progressive de prise des bonbons
+        total_a_prendre = sum(commande_actuelle.values())
+        if total_a_prendre > 15:
+            time.sleep(4)
+            return {"status": "error", "message": "Oups ! Timeout simulé : je n'ai pas trouvé assez de bonbons !"}
+            
+        for couleur in ["vert", "rouge", "bleu"]:
+            while commande_actuelle[couleur] > 0:
+                time.sleep(1.5) # Simule le temps de prendre le bonbon
+                commande_actuelle[couleur] -= 1
+                print(f"[SIMULATION] Bonbon {couleur} attrapé ! Reste: {commande_actuelle}")
+
+        img_sim = np.zeros((400, 600, 3), dtype=np.uint8)
+        img_sim[:] = (220, 200, 255)
+        cv2.putText(img_sim, "Mission accomplie !", (80, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (50, 50, 150), 4)
+        _, buffer = cv2.imencode('.jpg', img_sim)
+        photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
+        
+        return {"status": "ok", "message": "Tri terminé !", "photo": photo_b64}
     # --------------------------------------------
     # remise en position d'observation
     robot.move(PoseObject(*OBSERVATION_POSE))
