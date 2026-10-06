@@ -140,9 +140,44 @@ async function commander() {
     showModal('modal-chargement');
 }
 
+let pollInterval = null;
+
 async function validerChargement() {
     hideModal('modal-chargement');
     showModal('modal-loading');
+
+    console.log(`[ROBOT] TTS: Je vérifie le tapis...`);
+    
+    // Clear previous interval if any
+    if(pollInterval) clearInterval(pollInterval);
+    
+    // Polling de progression
+    pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch('/status_tri');
+            if (res.ok) {
+                const status = await res.json();
+                let htmlContent = '';
+                const colorNames = { vert: 'Vert', rouge: 'Rouge', bleu: 'Bleu' };
+                const colorClasses = { vert: 'text-green-600', rouge: 'text-red-500', bleu: 'text-blue-500' };
+                
+                for (let c of ['vert', 'rouge', 'bleu']) {
+                    if (status.initiale[c] > 0) {
+                        htmlContent += `
+                        <div class="grid grid-cols-3 gap-2 py-2 border-b-2 border-dashed border-gray-300 last:border-0 ${colorClasses[c]}">
+                            <div>${status.initiale[c]} ${colorNames[c]}</div>
+                            <div>${status.ramasse[c]} ${colorNames[c]}</div>
+                            <div>${status.actuelle[c]} ${colorNames[c]}</div>
+                        </div>`;
+                    }
+                }
+                const pt = document.getElementById('progress-table');
+                if (pt) pt.innerHTML = htmlContent;
+            }
+        } catch(e) {
+            console.error("Polling error", e);
+        }
+    }, 800);
 
     try {
         const response = await fetch('/valider_chargement', { method: 'POST' });
@@ -150,7 +185,8 @@ async function validerChargement() {
         
         clearInterval(pollInterval);
         hideModal('modal-loading');
-                if(data.status === 'error') {
+        
+        if(data.status === 'error') {
             const errMsg = document.getElementById('error-message-txt');
             if(errMsg) errMsg.textContent = data.message;
             showModal('modal-error');
@@ -181,7 +217,6 @@ async function validerChargement() {
         showModal('modal-error');
     }
 }
-
 
 function retryOrder() {
     hideModal('modal-error');

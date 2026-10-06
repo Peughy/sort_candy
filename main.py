@@ -82,14 +82,14 @@ async def choix_enfant(choixEnfant: ChoixEnfant):
 
 @app.get('/status_tri')
 async def get_status_tri():
-    # Permet au frontend de savoir combien on a ramassé
-    total_initial = sum(commande_initiale.values())
-    total_restant = sum(commande_actuelle.values())
-    total_ramasse = total_initial - total_restant
+    commande_ramasse = {}
+    for couleur in commande_initiale:
+        commande_ramasse[couleur] = commande_initiale[couleur] - commande_actuelle[couleur]
+        
     return {
-        "ramasse": total_ramasse,
-        "restant": total_restant,
-        "total": total_initial
+        "initiale": commande_initiale,
+        "actuelle": commande_actuelle,
+        "ramasse": commande_ramasse
     }
 
 @app.post('/valider_chargement')
@@ -140,7 +140,7 @@ async def demarrer_tri():
             
         try:
             # On cherche N'IMPORTE QUEL objet sur le tapis
-            has_obj, obj_pose, _, obj_color = robot.get_target_pose_from_cam(
+            has_obj, obj_pose_approx, _, obj_color = robot.get_target_pose_from_cam(
                 WORKSPACE_NAME,
                 height_offset=0.0005,
                 shape=ObjectShape.ANY,
@@ -155,21 +155,53 @@ async def demarrer_tri():
             
             # Si on reconnaît la couleur ET qu'il nous en faut encore dans la commande
             if couleur_fr and commande_actuelle.get(couleur_fr, 0) > 0:
-                print(f"Bonbon {couleur_fr} détecté ! Prise en cours...")
+                print(f"🎯 Bonbon {couleur_fr} détecté au loin ! Freinage...")
                 
+                # ==========================================
+                # MÉTHODE 5 : Gestion de l'inertie du tapis
+                # ==========================================
                 robot.stop_conveyor(conveyor_id)
-                robot.pick(obj_pose)
-                robot.move(PoseObject(*PLATEAU_POSE))
-                robot.release_with_tool()
-                robot.move(PoseObject(*OBSERVATION_POSE))
+                time.sleep(0.5) # On laisse au bonbon le temps d'arrêter de glisser
                 
-                # On diminue la quantité restante à chercher
-                commande_actuelle[couleur_fr] -= 1
+                # ==========================================
+                # MÉTHODE 4 : Asservissement Visuel (Centrage)
+                # ==========================================
+                print("👀 Recentrage de la caméra à la verticale du bonbon...")
+                try:
+                    pose_survol = PoseObject(
+                        x=obj_pose_approx.x,
+                        y=obj_pose_approx.y,
+                        z=OBSERVATION_POSE[2],
+                        roll=OBSERVATION_POSE[3],
+                        pitch=OBSERVATION_POSE[4],
+                        yaw=OBSERVATION_POSE[5]
+                    )
+                    robot.move_pose(pose_survol)
+                    time.sleep(0.3) # On attend que le bras arrête de trembler
+                    
+                    has_obj_exact, obj_pose_exact, _, _ = robot.get_target_pose_from_cam(
+                        WORKSPACE_NAME,
+                        height_offset=0.0005,
+                        shape=ObjectShape.ANY,
+                        color=ObjectColor.ANY
+                    )
+                    
+                    if has_obj_exact:
+                        print("✅ Position parfaite verrouillée. Prise en cours !")
+                        robot.pick(obj_pose_exact)
+                        robot.move_pose(PoseObject(*PLATEAU_POSE))
+                        robot.release_with_tool()
+                        
+                        commande_actuelle[couleur_fr] -= 1
+                        time_start = time.time()
+                    else:
+                        print("⚠️ Le bonbon a glissé hors de vue, on annule !")
+                except Exception as e:
+                    print(f"⚠️ Erreur de centrage : {e}")
                 
-                # On réinitialise le chronomètre car on vient de trouver un bonbon valide
-                time_start = time.time()
+                # Retour en observation pour le reste
+                robot.move_pose(PoseObject(*OBSERVATION_POSE))
                 
-                # On redémarre le tapis si on n'a pas fini
                 if sum(commande_actuelle.values()) > 0:
                     robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
         

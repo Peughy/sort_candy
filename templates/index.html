@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Quicksand:wght@600;700;900&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/style.css?v=9">
+    <link rel="stylesheet" href="/static/style.css?v=10">
 </head>
 
 <body class="flex flex-col items-center justify-center">
@@ -281,17 +281,15 @@
             regarde...</h2>
                 <p class="game-panel px-6 py-2 text-2xl font-bold bg-white text-primary">Analyse par la caméra en cours 👁️</p>
         
-        <div id="progress-container" class="mt-8 bg-white/90 border-4 border-[#4D9DE0] rounded-2xl p-4 text-center shadow-lg w-full max-w-sm animate-slide-up">
-            <p class="font-[Chewy] text-2xl text-[#3D2314] mb-2">Progression</p>
-            <div class="flex justify-around text-xl font-bold">
-                <div class="flex flex-col items-center">
-                    <span class="text-green-600">Ramassés</span>
-                    <span id="count-picked" class="text-5xl text-green-500 font-[Chewy]">0</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <span class="text-orange-500">Restants</span>
-                    <span id="count-remaining" class="text-5xl text-orange-400 font-[Chewy]">0</span>
-                </div>
+        <div id="progress-container" class="mt-8 bg-white/90 border-4 border-[#4D9DE0] rounded-2xl p-4 text-center shadow-lg w-full max-w-lg animate-slide-up">
+            <div class="grid grid-cols-3 gap-2 mb-2 text-xl font-[Chewy] text-[#3D2314] border-b-4 border-[#4D9DE0] pb-2">
+                <div>Commandés</div>
+                <div>Ramassés</div>
+                <div>Restants</div>
+            </div>
+            <div id="progress-table" class="flex flex-col text-2xl font-[Chewy] bg-gray-50 rounded p-2">
+                <!-- Dynamique -->
+                <div class="text-gray-400 italic text-lg py-2">En attente de connexion...</div>
             </div>
         </div>
     </div>
@@ -350,7 +348,7 @@
         </div>
     </div>
 
-    <script src="/static/main.js?v=9"></script>
+    <script src="/static/main.js?v=10"></script>
 </body>
 
 </html>
