@@ -169,14 +169,14 @@ async def demarrer_tri():
                 print("👀 Recentrage de la caméra à la verticale du bonbon...")
                 try:
                     pose_survol = PoseObject(
-                        x=obj_pose_approx.x,
-                        y=obj_pose_approx.y,
-                        z=OBSERVATION_POSE[2],
-                        roll=OBSERVATION_POSE[3],
-                        pitch=OBSERVATION_POSE[4],
-                        yaw=OBSERVATION_POSE[5]
+                        obj_pose_approx.x,
+                        obj_pose_approx.y,
+                        OBSERVATION_POSE[2],
+                        OBSERVATION_POSE[3],
+                        OBSERVATION_POSE[4],
+                        OBSERVATION_POSE[5]
                     )
-                    robot.move_pose(pose_survol)
+                    robot.move(pose_survol)
                     time.sleep(0.3) # On attend que le bras arrête de trembler
                     
                     has_obj_exact, obj_pose_exact, _, _ = robot.get_target_pose_from_cam(
@@ -189,7 +189,7 @@ async def demarrer_tri():
                     if has_obj_exact:
                         print("✅ Position parfaite verrouillée. Prise en cours !")
                         robot.pick(obj_pose_exact)
-                        robot.move_pose(PoseObject(*PLATEAU_POSE))
+                        robot.move(PoseObject(*PLATEAU_POSE))
                         robot.release_with_tool()
                         
                         commande_actuelle[couleur_fr] -= 1
@@ -200,7 +200,7 @@ async def demarrer_tri():
                     print(f"⚠️ Erreur de centrage : {e}")
                 
                 # Retour en observation pour le reste
-                robot.move_pose(PoseObject(*OBSERVATION_POSE))
+                robot.move(PoseObject(*OBSERVATION_POSE))
                 
                 if sum(commande_actuelle.values()) > 0:
                     robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
