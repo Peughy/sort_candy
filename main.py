@@ -62,13 +62,13 @@ async def afficher_accueil(request: Request):
     return templates.TemplateResponse(name="index.html", request={"request": request})
 
 @app.post("/saluer")
-async def saluer_enfant(enfant: InfoEnfant):
+def saluer_enfant(enfant: InfoEnfant):
     time.sleep(1.5)
     print(f"Nouvelle session pour : {enfant.prenom}")
     return {"status": "ok", "message": f"Bonjour {enfant.prenom}"}
 
 @app.post('/choix')
-async def choix_enfant(choixEnfant: ChoixEnfant):
+def choix_enfant(choixEnfant: ChoixEnfant):
     global commande_actuelle, commande_initiale
     print(f"Commande reçue : {choixEnfant.choixBb}")
     
@@ -81,7 +81,7 @@ async def choix_enfant(choixEnfant: ChoixEnfant):
     return {"status": "ok", "message": "Choix reçu, en attente du chargement."}
 
 @app.get('/status_tri')
-async def get_status_tri():
+def get_status_tri():
     commande_ramasse = {}
     for couleur in commande_initiale:
         commande_ramasse[couleur] = commande_initiale[couleur] - commande_actuelle[couleur]
@@ -93,11 +93,11 @@ async def get_status_tri():
     }
 
 @app.post('/valider_chargement')
-async def demarrer_tri():
+def demarrer_tri():
     global commande_actuelle
     print("L'enfant a cliqué sur 'C'est prêt !'")
     
-        # ---------------- SIMULATION ----------------
+    # ---------------- SIMULATION ----------------
     if not ROBOT_CONNECTE:
         print("[SIMULATION] Le tapis roulant démarre virtuellement...")
         # Simulation progressive de prise des bonbons
@@ -140,7 +140,7 @@ async def demarrer_tri():
             
         try:
             # On cherche N'IMPORTE QUEL objet sur le tapis
-            has_obj, obj_pose_approx, _, obj_color = robot.get_target_pose_from_cam(
+            has_obj, _, _, obj_color = robot.get_target_pose_from_cam(
                 WORKSPACE_NAME,
                 height_offset=0.0005,
                 shape=ObjectShape.ANY,
@@ -155,39 +155,23 @@ async def demarrer_tri():
             
             # Si on reconnaît la couleur ET qu'il nous en faut encore dans la commande
             if couleur_fr and commande_actuelle.get(couleur_fr, 0) > 0:
-                print(f"🎯 Bonbon {couleur_fr} détecté au loin ! Freinage...")
+                print(f"Bonbon {couleur_fr} détecté au loin ! Freinage...")
                 
-                # ==========================================
-                # MÉTHODE 5 : Gestion de l'inertie du tapis
-                # ==========================================
                 robot.stop_conveyor(conveyor_id)
-                time.sleep(0.5) # On laisse au bonbon le temps d'arrêter de glisser
+                time.sleep(0.5) 
                 
-                # ==========================================
-                # MÉTHODE 4 : Asservissement Visuel (Centrage)
-                # ==========================================
-                print("👀 Recentrage de la caméra à la verticale du bonbon...")
+                # Double vérification sans bouger
+                print("Prise d'une seconde photo pour annuler l'inertie...")
                 try:
-                    pose_survol = PoseObject(
-                        obj_pose_approx.x,
-                        obj_pose_approx.y,
-                        OBSERVATION_POSE[2],
-                        OBSERVATION_POSE[3],
-                        OBSERVATION_POSE[4],
-                        OBSERVATION_POSE[5]
-                    )
-                    robot.move(pose_survol)
-                    time.sleep(0.3) # On attend que le bras arrête de trembler
-                    
                     has_obj_exact, obj_pose_exact, _, _ = robot.get_target_pose_from_cam(
                         WORKSPACE_NAME,
-                        height_offset=0.0005,
+                        height_offset=0.01,
                         shape=ObjectShape.ANY,
                         color=ObjectColor.ANY
                     )
                     
                     if has_obj_exact:
-                        print("✅ Position parfaite verrouillée. Prise en cours !")
+                        print("Position parfaite verrouillée. Prise en cours !")
                         robot.pick(obj_pose_exact)
                         robot.move(PoseObject(*PLATEAU_POSE))
                         robot.release_with_tool()
@@ -195,9 +179,11 @@ async def demarrer_tri():
                         commande_actuelle[couleur_fr] -= 1
                         time_start = time.time()
                     else:
-                        print("⚠️ Le bonbon a glissé hors de vue, on annule !")
+                        print("Le bonbon a glissé hors de vue, on annule !")
                 except Exception as e:
-                    print(f"⚠️ Erreur de centrage : {e}")
+                    print(f"Erreur lors de la prise finale : {e}")
+                
+                
                 
                 # Retour en observation pour le reste
                 robot.move(PoseObject(*OBSERVATION_POSE))
@@ -220,7 +206,7 @@ async def demarrer_tri():
         try:
             # On se met en position pour voir le résultat
             robot.move(PoseObject(*PHOTO_POSE))
-            time.sleep(1) # Laisse le temps à la caméra de faire l'auto-focus/balance des blancs
+            time.sleep(1) 
             
             img_compressed = robot.get_img_compressed()
             img_cv2 = uncompress_image(img_compressed)
