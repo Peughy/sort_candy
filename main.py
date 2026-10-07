@@ -16,10 +16,9 @@ ROBOT_IP = '169.254.200.200'
 WORKSPACE_NAME = "scienceCONVOYER"
 
 # --- CORRECTIONS DE PRIS (Offsets) ---
-# Modifiez ces valeurs (en mètres) pour recentrer la pince sur le bonbon
-OFFSET_X = 0.00   # Si ça pique trop sur un bord gauche/droite
-OFFSET_Y = -0.01  # -0.01 recule de 1cm (ajuster si ça pique sur l'extrémité haute)
-OFFSET_Z = -0.002 # -0.002 permet à la pince de descendre 2 mm plus bas pour mieux coller
+OFFSET_X = 0.010   
+OFFSET_Y = 0.020  
+OFFSET_Z = 0.000 
 
 # Poses
 OBSERVATION_POSE = [0.187, -0.011, 0.226, 3.077, 1.035, 2.995]
