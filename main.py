@@ -173,20 +173,22 @@ def demarrer_tri():
                     if has_obj_exact:
                         print("Position parfaite verrouillée. Prise en cours !")
                         robot.pick(obj_pose_exact)
-                        robot.move(PoseObject(*PLATEAU_POSE))
-                        robot.release_with_tool()
+                        robot.place(PoseObject(*PLATEAU_POSE))
                         
                         commande_actuelle[couleur_fr] -= 1
                         time_start = time.time()
                     else:
                         print("Le bonbon a glissé hors de vue, on annule !")
+                
+                    # Retour en observation pour le reste
+                    robot.move(PoseObject(*OBSERVATION_POSE))
                 except Exception as e:
-                    print(f"Erreur lors de la prise finale : {e}")
-                
-                
-                
-                # Retour en observation pour le reste
-                robot.move(PoseObject(*OBSERVATION_POSE))
+                    print(f"Erreur lors de la séquence de prise/dépose : {e}")
+                    # En cas d'erreur de trajectoire, on essaie de remonter
+                    try:
+                        robot.move(PoseObject(*OBSERVATION_POSE))
+                    except:
+                        pass
                 
                 if sum(commande_actuelle.values()) > 0:
                     robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
