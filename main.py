@@ -47,6 +47,15 @@ except Exception as e:
     robot = None
     conveyor_id = None
 # ==========================================
+# POSITIONS DIDACTICIEL (Le robot effectue les étapes de tri)
+# Remplissez les coordonnées (x, y, z, roll, pitch, yaw) pour chaque position
+POS1 = (0.2, 0.0, 0.2, 0.0, 1.57, 0.0) # Se place au-dessus de la zone de départ
+POS2 = (0.2, 0.0, 0.1, 0.0, 1.57, 0.0) # Descend pour attraper le bonbon
+POS3 = (0.2, 0.2, 0.15, 0.0, 1.57, 0.0) # Dépose le bonbon sur le tapis
+# L'étape 4 est gérée par le tapis roulant
+POS5 = (0.2, -0.2, 0.1, 0.0, 1.57, 0.0) # Attrape le bonbon à la fin du tapis
+POS6 = (0.1, -0.2, 0.2, 0.0, 1.57, 0.0) # Lâche le bonbon dans le bac final
+# ==========================================
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -247,3 +256,40 @@ def demarrer_tri():
 
     robot.move(PoseObject(*INITIAL_POSE))
     return {"status": "ok", "message": "Tous les bonbons ont été triés !", "photo": photo_b64}
+
+@app.post('/run_demo')
+def run_didacticiel_demo():
+    print("Exécution de la démo du didacticiel...")
+    if not ROBOT_CONNECTE:
+        time.sleep(3)
+        return {"status": "ok", "message": "Démo simulée terminée !"}
+    
+    try:
+        # Étape 1
+        robot.move(PoseObject(*POS1))
+        time.sleep(0.5)
+        # Étape 2
+        robot.move(PoseObject(*POS2))
+        robot.grasp_with_tool()
+        time.sleep(0.5)
+        # Étape 3
+        robot.move(PoseObject(*POS1)) # remonte
+        robot.move(PoseObject(*POS3))
+        robot.release_with_tool()
+        # Étape 4 (Tapis)
+        robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
+        time.sleep(4)
+        robot.stop_conveyor(conveyor_id)
+        # Étape 5
+        robot.move(PoseObject(*POS5))
+        robot.grasp_with_tool()
+        time.sleep(0.5)
+        # Étape 6
+        robot.move(PoseObject(*POS1)) # remonte pour ne pas taper
+        robot.move(PoseObject(*POS6))
+        robot.release_with_tool()
+        # Retour observ
+        robot.move(PoseObject(*OBSERVATION_POSE))
+        return {"status": "ok", "message": "Démo terminée !"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

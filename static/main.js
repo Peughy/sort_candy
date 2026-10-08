@@ -14,7 +14,7 @@ const cart = { vert: 0, rouge: 0, bleu: 0 };
 const colors = { vert: 'bg-green-100 text-green-700', rouge: 'bg-red-100 text-red-700', bleu: 'bg-blue-100 text-blue-700' };
 
 function showScreen(idToShow) {
-    ['screen-home', 'screen-menu', 'screen-quiz'].forEach(id => {
+    ['screen-home', 'screen-menu', 'screen-quiz', 'screen-logic-game'].forEach(id => {
         document.getElementById(id).classList.add('hidden-screen');
     });
     document.getElementById(idToShow).classList.remove('hidden-screen');
@@ -57,7 +57,7 @@ async function validerPrenom() {
 
     hideGlobalLoading();
     document.getElementById('display-name').textContent = childName;
-    showModal('modal-intro-quiz'); // On affiche la modale d'intro au lieu de lancer directement
+    showModal('modal-choice'); // On affiche la modale de choix de parcours
 }
 
 function toggleQty(couleur) {
@@ -189,10 +189,10 @@ async function validerChargement() {
         if (data.status === 'error') {
             const errMsg = document.getElementById('error-message-txt');
             if (errMsg) errMsg.textContent = data.message;
-            
+
             const recapDetails = document.getElementById('error-recap-details');
             const recapContent = document.getElementById('error-recap-content');
-            
+
             if (recapDetails && recapContent && data.details) {
                 let html = '';
                 const colorNames = { vert: 'Vert', rouge: 'Rouge', bleu: 'Bleu' };
@@ -208,7 +208,7 @@ async function validerChargement() {
                 recapContent.innerHTML = html;
                 recapDetails.classList.remove('hidden');
             }
-            
+
             showModal('modal-error');
         } else {
             showModal('modal-success');
@@ -252,7 +252,7 @@ function retryQuizAfterError() {
     hideModal('modal-success');
     hideModal('modal-chargement');
     hideModal('modal-loading');
-    
+
     // Réinitialiser le panier
     cart.vert = 0; cart.rouge = 0; cart.bleu = 0;
     ['vert', 'rouge', 'bleu'].forEach(c => {
@@ -261,7 +261,7 @@ function retryQuizAfterError() {
         document.getElementById(`val-${c}`).textContent = 0;
     });
     checkCart();
-    
+
     // Relancer le quiz
     startQuiz();
 }
@@ -451,4 +451,212 @@ function finishQuiz() {
             btnContainer.appendChild(btnHome);
         }
     }, 500);
+}
+
+// ==================== MINI-JEU LOGIQUE ====================
+const logicStepsBase = [
+    { id: 1, text: "Je me place au-dessus", img: "/static/images/im1.jpeg" },
+    { id: 2, text: "J'attrape le bonbon", img: "/static/images/im2.jpeg" },
+    { id: 3, text: "Je le dépose sur le tapis", img: "/static/images/im3.jpeg" },
+    { id: 4, text: "Le tapis avance", img: "/static/images/im4.jpeg" },
+    { id: 5, text: "J'attrape à la fin du tapis", img: "/static/images/im5.jpeg" },
+    { id: 6, text: "Je le lâche dans le bac", img: "/static/images/im6.jpeg" }
+];
+
+let logicDeck = [];
+let logicSlots = [null, null, null, null, null, null];
+let isLogicLevel2 = false;
+
+function startLogicGameDemo() {
+    isLogicLevel2 = false;
+    showScreen('screen-logic-game');
+    document.getElementById('logic-instructions').textContent = "Lis bien ces étapes pour comprendre comment je fonctionne.";
+    document.getElementById('logic-divider').classList.add('hidden');
+    document.getElementById('logic-deck').classList.add('hidden');
+    document.getElementById('btn-logic-shuffle').classList.add('hidden');
+
+    const btnAction = document.getElementById('btn-logic-action');
+    btnAction.textContent = "🤖 Lancer la démo du robot !";
+    btnAction.onclick = async () => {
+        btnAction.disabled = true;
+        btnAction.textContent = "Démo en cours...";
+        try {
+            await fetch('/run_demo', { method: 'POST' });
+        } catch (e) { }
+        btnAction.disabled = false;
+        btnAction.textContent = "J'ai compris, on joue !";
+        btnAction.onclick = shuffleAndStartLogic;
+    };
+    btnAction.classList.remove('hidden');
+
+    logicSlots = [...logicStepsBase]; // Fill with correct sequence
+    renderLogicGame(true); // true = demo mode (no clicking)
+}
+
+function startLogicLevel2() {
+    isLogicLevel2 = true;
+    showScreen('screen-logic-game');
+    document.getElementById('logic-instructions').textContent = "NIVEAU 2 : Attention, certaines étapes sont cachées ! Retrouve l'ordre.";
+
+    // Shuffle logicDeck with level 2 modifier
+    let mixed = [...logicStepsBase].sort(() => Math.random() - 0.5);
+    logicDeck = mixed.map((step, idx) => {
+        // Hide every other text randomly for level 2
+        return {
+            ...step,
+            isHiddenText: Math.random() > 0.5 // 50% chance to hide text and show "?"
+        };
+    });
+
+    logicSlots = [null, null, null, null, null, null];
+
+    document.getElementById('logic-divider').classList.remove('hidden');
+    document.getElementById('logic-deck').classList.remove('hidden');
+    document.getElementById('btn-logic-shuffle').classList.remove('hidden');
+
+    const btnAction = document.getElementById('btn-logic-action');
+    btnAction.textContent = "Vérifier ma réponse !";
+    btnAction.onclick = validateLogicGame;
+    btnAction.classList.remove('hidden');
+
+    renderLogicGame(false);
+}
+
+function shuffleAndStartLogic() {
+    document.getElementById('logic-instructions').textContent = "Clique sur les cartes en bas pour les remettre dans le bon ordre en haut !";
+    document.getElementById('logic-divider').classList.remove('hidden');
+    document.getElementById('logic-deck').classList.remove('hidden');
+    document.getElementById('btn-logic-shuffle').classList.remove('hidden');
+
+    const btnAction = document.getElementById('btn-logic-action');
+    btnAction.textContent = "Vérifier ma réponse !";
+    btnAction.onclick = validateLogicGame;
+
+    // Mélange des cartes
+    logicDeck = [...logicStepsBase].sort(() => Math.random() - 0.5);
+    // Reset hidden text for level 1
+    logicDeck = logicDeck.map(step => ({ ...step, isHiddenText: false }));
+    logicSlots = [null, null, null, null, null, null];
+
+    renderLogicGame(false);
+}
+
+function shuffleDeckOnly() {
+    logicDeck = logicDeck.sort(() => Math.random() - 0.5);
+    renderLogicGame(false);
+}
+
+function renderLogicGame(isDemo) {
+    const slotsContainer = document.getElementById('logic-slots');
+    const deckContainer = document.getElementById('logic-deck');
+
+    slotsContainer.innerHTML = '';
+    deckContainer.innerHTML = '';
+
+    // Render slots (Top)
+    logicSlots.forEach((slotData, index) => {
+        const slotEl = document.createElement('div');
+        slotEl.className = 'w-full min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center p-2 text-center transition-all cursor-pointer relative border-4 border-dashed rounded-xl ' +
+            (slotData ? 'border-[#4D9DE0] bg-blue-50' : 'border-gray-300 bg-gray-50');
+
+        const numBadge = document.createElement('div');
+        numBadge.className = 'absolute -top-3 -left-3 w-8 h-8 bg-[#FFC933] border-2 border-[#3D2314] rounded-full flex items-center justify-center font-bold font-[Chewy] text-xl z-10';
+        numBadge.textContent = index + 1;
+        slotEl.appendChild(numBadge);
+
+        if (slotData) {
+            if (!slotData.isHiddenText) {
+                const imgEl = document.createElement('img');
+                imgEl.src = slotData.img;
+                imgEl.className = 'h-32 md:h-40 w-auto max-w-full object-contain mx-auto rounded pointer-events-none mb-2 border border-gray-300 bg-white';
+                imgEl.onerror = () => { imgEl.style.display = 'none'; }; // Hide if image missing
+                slotEl.appendChild(imgEl);
+            }
+
+            const textEl = document.createElement('span');
+            textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
+            textEl.textContent = slotData.isHiddenText ? "??? (Mystère) ???" : slotData.text;
+            slotEl.appendChild(textEl);
+
+            if (!isDemo) {
+                slotEl.onclick = () => returnCardToDeck(index);
+                slotEl.classList.add('hover:bg-red-50', 'hover:border-red-400');
+            }
+        } else {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'text-gray-400 font-bold';
+            placeholder.textContent = 'Vide';
+            slotEl.appendChild(placeholder);
+        }
+
+        slotsContainer.appendChild(slotEl);
+    });
+
+    // Render deck (Bottom)
+    logicDeck.forEach((cardData, deckIndex) => {
+        if (cardData === null) return;
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'w-full min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center p-2 bg-white border-4 border-[#FF5A92] rounded-xl text-center cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-transform shadow';
+
+        if (!cardData.isHiddenText) {
+            const imgEl = document.createElement('img');
+            imgEl.src = cardData.img;
+            imgEl.className = 'h-32 md:h-40 w-auto max-w-full object-contain mx-auto rounded pointer-events-none mb-2 border border-gray-300 bg-white';
+            imgEl.onerror = () => { imgEl.style.display = 'none'; }; // Hide if image missing
+            cardEl.appendChild(imgEl);
+        }
+
+        const textEl = document.createElement('span');
+        textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
+        textEl.textContent = cardData.isHiddenText ? "??? (Mystère) ???" : cardData.text;
+
+        cardEl.appendChild(textEl);
+        cardEl.onclick = () => moveCardToSlot(deckIndex);
+
+        deckContainer.appendChild(cardEl);
+    });
+}
+
+function moveCardToSlot(deckIndex) {
+    const emptySlotIndex = logicSlots.findIndex(s => s === null);
+    if (emptySlotIndex !== -1) {
+        logicSlots[emptySlotIndex] = logicDeck[deckIndex];
+        logicDeck.splice(deckIndex, 1);
+        renderLogicGame(false);
+    }
+}
+
+function returnCardToDeck(slotIndex) {
+    if (logicSlots[slotIndex]) {
+        logicDeck.push(logicSlots[slotIndex]);
+        logicSlots[slotIndex] = null;
+        renderLogicGame(false);
+    }
+}
+
+function validateLogicGame() {
+    // Check if full
+    if (logicSlots.includes(null)) {
+        alert("Place toutes les cartes avant de vérifier !");
+        return;
+    }
+
+    // Check order
+    let isWin = true;
+    logicSlots.forEach((slot, index) => {
+        if (slot.id !== index + 1) {
+            isWin = false;
+        }
+    });
+
+    if (isWin) {
+        showModal('modal-logic-success');
+    } else {
+        // Tremblement et message
+        const slotsContainer = document.getElementById('logic-slots');
+        slotsContainer.classList.add('animate-bounce-slow');
+        setTimeout(() => slotsContainer.classList.remove('animate-bounce-slow'), 500);
+        alert("Oups ! L'ordre n'est pas le bon. Le robot est perdu ! Réessaie.");
+    }
 }

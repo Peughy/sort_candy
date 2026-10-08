@@ -53,7 +53,7 @@
         </div>
 
         <button onclick="showModal('modal-name')" class="btn-game px-12 py-6 text-4xl animate-slide-up"
-            style="animation-delay: 0.2s; opacity: 0;">
+            style="animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards;">
             Jouer ! 
         </button>
     </div>
@@ -84,6 +84,21 @@
 
                 <button onclick="validerPrenom()" class="btn-game btn-game-yellow w-full text-3xl">
                     C'est parti ! 
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Choix du parcours -->
+    <div id="modal-choice" class="hidden-screen fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="game-panel w-full max-w-lg p-8 text-center animate-pop-in relative">
+            <h2 class="title-cartoon text-5xl text-primary mb-8" style="text-shadow: 2px 2px 0 var(--text-dark);">Que veux-tu faire ?</h2>
+            <div class="flex flex-col gap-4">
+                <button onclick="hideModal('modal-choice'); showModal('modal-intro-quiz');" class="btn-game w-full text-3xl">
+                    🧠 Quiz (Gagner des bonbons)
+                </button>
+                <button onclick="hideModal('modal-choice'); startLogicGameDemo();" class="btn-game btn-game-yellow w-full text-3xl">
+                    🤖 Didacticiel (Apprendre)
                 </button>
             </div>
         </div>
@@ -465,8 +480,55 @@
         </div>
     </div>
 
+    <!-- ==================== ÉCRAN JEU DE LOGIQUE ==================== -->
+    <div id="screen-logic-game" class="hidden-screen w-full min-h-screen flex flex-col items-center justify-center p-4 relative z-10 overflow-hidden">
+        <h1 class="title-cartoon text-5xl md:text-6xl mb-4 text-center">Comment je trie les bonbons ?</h1>
+        <p id="logic-instructions" class="text-xl font-bold font-[Quicksand] text-[#3D2314] mb-8 text-center bg-white/70 p-2 rounded max-w-2xl">
+            Lis bien ces étapes pour comprendre comment je fonctionne.
+        </p>
+
+        <div class="game-panel w-full max-w-5xl p-6 md:p-8 flex flex-col gap-6 bg-white relative z-10 border-[#4D9DE0]">
+            <!-- Emplacements (Slots) -->
+            <div id="logic-slots" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Généré par JS -->
+            </div>
+            
+            <hr id="logic-divider" class="border-4 border-dashed border-gray-300 hidden">
+            
+            <!-- Cartes mélangées (Deck) -->
+            <div id="logic-deck" class="grid grid-cols-2 md:grid-cols-3 gap-4 min-h-[120px] hidden">
+                <!-- Généré par JS -->
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4 w-full">
+                <button id="btn-logic-shuffle" onclick="shuffleDeckOnly()" class="btn-game flex-1 text-2xl hidden" style="background-color: #FFC933; box-shadow: 0px 8px 0px #D6A420; color: #3D2314;">
+                    🔀 Mélanger
+                </button>
+                <button id="btn-logic-action" onclick="shuffleAndStartLogic()" class="btn-game flex-[2] text-3xl" style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
+                    J'ai tout compris, on joue !
+                </button>
+            </div>
+        </div>
+        
+        <button onclick="showScreen('screen-home')" class="mt-8 text-xl font-bold font-[Quicksand] text-[#3D2314] underline cursor-pointer">Retour à l'accueil</button>
+    </div>
+
+    <!-- Modale Victoire Logique -->
+    <div id="modal-logic-success" class="hidden-screen fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-md p-4">
+        <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-green-500 border-8 bg-green-50">
+            <h2 class="title-cartoon text-6xl text-green-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Bravo !</h2>
+            <p class="text-2xl font-bold mb-6 text-green-800 font-[Quicksand]">Tu as trouvé le bon ordre de tri !</p>
+            <button onclick="hideModal('modal-logic-success'); startLogicLevel2();" class="btn-game w-full text-2xl mb-4" style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
+                Niveau 2 (Difficile)
+            </button>
+            <button onclick="hideModal('modal-logic-success'); showScreen('screen-home');" class="btn-game btn-game-yellow w-full text-2xl">
+                Retour au menu
+            </button>
+        </div>
+    </div>
+
     <script src="/static/questions.js?v=1"></script>
-    <script src="/static/main.js?v=10"></script>
+    <script src="/static/main.js?v=13"></script>
 </body>
 
 </html>
