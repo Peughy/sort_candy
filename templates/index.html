@@ -54,7 +54,7 @@
 
         <button onclick="showModal('modal-name')" class="btn-game px-12 py-6 text-4xl animate-slide-up"
             style="animation-delay: 0.2s; opacity: 0;">
-            Jouer ! 🎮
+            Jouer ! 
         </button>
     </div>
 
@@ -83,8 +83,83 @@
                     class="input-game w-full text-center text-3xl p-4 mb-6" autocomplete="off">
 
                 <button onclick="validerPrenom()" class="btn-game btn-game-yellow w-full text-3xl">
-                    C'est parti ! 🚀
+                    C'est parti ! 
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ÉCRAN DU QUIZ ==================== -->
+    <div id="screen-quiz" class="hidden-screen w-full min-h-screen flex flex-col items-center justify-center p-4 relative z-10 overflow-hidden">
+        
+        <!-- Décorations de fond pour le quiz (Stickers) -->
+        <!-- Point d'interrogation gauche -->
+        <svg class="absolute top-[15%] left-[5%] md:left-[15%] w-16 h-16 md:w-24 md:h-24 animate-bounce-slow opacity-80 pointer-events-none z-0" viewBox="0 0 100 100">
+            <text x="50" y="80" font-family="Chewy" font-size="80" fill="#FFC933" stroke="#3D2314" stroke-width="4" text-anchor="middle" transform="rotate(-15 50 50)">?</text>
+        </svg>
+        
+        <!-- Point d'exclamation droite -->
+        <svg class="absolute top-[25%] right-[5%] md:right-[15%] w-16 h-16 md:w-24 md:h-24 animate-pulse opacity-80 pointer-events-none z-0" viewBox="0 0 100 100" style="animation-duration: 2s;">
+            <text x="50" y="80" font-family="Chewy" font-size="80" fill="#FF5A92" stroke="#3D2314" stroke-width="4" text-anchor="middle" transform="rotate(15 50 50)">!</text>
+        </svg>
+
+        <!-- Autre Point d'interrogation bas gauche -->
+        <svg class="absolute bottom-[20%] left-[10%] w-12 h-12 md:w-20 md:h-20 animate-spin-slow opacity-60 pointer-events-none z-0" viewBox="0 0 100 100" style="animation-duration: 6s;">
+            <text x="50" y="80" font-family="Chewy" font-size="80" fill="#4D9DE0" stroke="#3D2314" stroke-width="4" text-anchor="middle">?</text>
+        </svg>
+
+        <!-- Carré tournant -->
+        <svg class="absolute bottom-[30%] right-[10%] w-16 h-16 animate-pulse opacity-60 pointer-events-none z-0" viewBox="0 0 100 100">
+            <rect x="20" y="20" width="60" height="60" fill="none" stroke="#FF5A92" stroke-width="8" rx="10" transform="rotate(45 50 50)"/>
+        </svg>
+        
+        <!-- Triangle -->
+        <svg class="absolute top-[10%] left-[40%] w-12 h-12 animate-bounce-slow opacity-60 pointer-events-none z-0" viewBox="0 0 100 100">
+            <polygon points="50,20 80,80 20,80" fill="none" stroke="#4D9DE0" stroke-width="8" stroke-linejoin="round"/>
+        </svg>
+        
+        <!-- Arobase @ -->
+        <svg class="absolute bottom-[10%] right-[20%] w-16 h-16 animate-spin-slow opacity-60 pointer-events-none z-0" viewBox="0 0 100 100" style="animation-duration: 8s;">
+            <text x="50" y="80" font-family="Chewy" font-size="80" fill="#FFC933" stroke="#3D2314" stroke-width="4" text-anchor="middle">@</text>
+        </svg>
+        
+        <!-- Hashtag # -->
+        <svg class="absolute top-[30%] left-[8%] w-12 h-12 animate-bounce-slow opacity-60 pointer-events-none z-0" viewBox="0 0 100 100" style="animation-delay: 1s;">
+            <text x="50" y="80" font-family="Chewy" font-size="80" fill="#7bed9f" stroke="#3D2314" stroke-width="4" text-anchor="middle">#</text>
+        </svg>
+
+        <h1 class="title-cartoon text-5xl md:text-7xl mb-8 relative z-10 text-center">Je défie la science !</h1>
+
+        <div class="game-panel w-full max-w-3xl p-8 md:p-12 text-center animate-pop-in relative z-10 bg-white">
+            
+            <!-- Barre de progression -->
+            <div class="mb-8 w-full bg-gray-200 rounded-full h-8 border-4 border-[#3D2314] overflow-hidden flex items-center relative">
+                <div id="quiz-progress-bar" class="bg-[#2ed573] h-full transition-all duration-500 ease-out w-0 relative">
+                    <div class="absolute inset-0 bg-white opacity-20 transform -skew-x-12"></div>
+                </div>
+                <div id="quiz-progress-text" class="absolute w-full text-center font-[Chewy] text-xl text-[#3D2314] pointer-events-none drop-shadow-md">0/6</div>
+            </div>
+            
+            <h2 id="quiz-question-text" class="text-3xl md:text-5xl font-bold mb-10 text-[#3D2314] font-[Quicksand] leading-tight">
+                Chargement de la question...
+            </h2>
+            
+            <div id="quiz-answers" class="grid grid-cols-1 gap-4">
+                <!-- Boutons générés en JS -->
+            </div>
+            <!-- Safelist pour Tailwind CDN -->
+            <div class="hidden bg-green-500 bg-red-500 text-white border-green-700 border-red-700"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALE RÉSULTAT QUIZ ==================== -->
+    <div id="modal-quiz-result" class="hidden-screen fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-md p-4">
+        <div id="quiz-result-panel" class="game-panel w-full max-w-lg p-8 text-center animate-pop-in relative border-8">
+            <h2 id="quiz-result-title" class="title-cartoon text-6xl mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Titre</h2>
+            <p id="quiz-result-msg" class="text-2xl font-bold mb-8 font-[Quicksand] text-gray-800">Message</p>
+            
+            <div id="quiz-result-buttons" class="flex flex-col gap-4">
+                <!-- Boutons dynamiques -->
             </div>
         </div>
     </div>
@@ -127,7 +202,7 @@
             <h1 class="title-cartoon text-5xl md:text-7xl mb-2">Salut <span id="display-name"
                     class="text-yellow-300"></span> !</h1>
             <div class="game-panel inline-block px-6 py-2 bg-white/90">
-                <h2 class="text-2xl font-bold">Remplis ton sac magique 🎒</h2>
+                <h2 class="text-2xl font-bold">Remplis ton sac magique </h2>
             </div>
         </div>
 
@@ -220,7 +295,7 @@
         <div id="commander-container"
             class="fixed bottom-0 left-0 w-full p-6 flex justify-center translate-y-[150%] transition-transform duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275) z-40 bg-gradient-to-t from-[#D1FFC2] to-transparent">
             <button onclick="commander()" class="btn-game text-4xl py-5 px-16 flex items-center gap-4">
-                Commander ! 🚂
+                Commander ! 
             </button>
         </div>
     </div>
@@ -244,7 +319,7 @@
                 toi de jouer !</h2>
 
             <div class="bg-yellow-100 border-4 border-yellow-300 rounded-2xl p-4 mb-6">
-                <p class="text-2xl font-bold">Mets les bonbons sur mon tapis roulant magique ! ✨</p>
+                <p class="text-2xl font-bold">Mets les bonbons sur mon tapis roulant magique ! </p>
             </div>
 
             <div id="recap-commande" class="flex flex-wrap justify-center gap-3 mb-8 text-2xl font-bold">
@@ -252,10 +327,10 @@
             </div>
 
             <button onclick="validerChargement()" class="btn-game btn-game-yellow w-full text-3xl mb-4">
-                C'est prêt ! ✨
+                C'est prêt ! 
             </button>
             <button onclick="cancelOrder()" class="btn-game w-full text-2xl" style="background-color: #f1f2f6; color: #3D2314; box-shadow: 0px 8px 0px #dcdde1;">
-                ⬅️ Modifier ma commande
+                 Modifier ma commande
             </button>
         </div>
     </div>
@@ -279,7 +354,7 @@
 
         <h2 class="title-cartoon text-5xl text-white mb-2" style="text-shadow: 2px 2px 0 var(--text-dark);">Je
             regarde...</h2>
-                <p class="game-panel px-6 py-2 text-2xl font-bold bg-white text-primary">Analyse par la caméra en cours 👁️</p>
+                <p class="game-panel px-6 py-2 text-2xl font-bold bg-white text-primary">Analyse par la caméra en cours </p>
         
         <div id="progress-container" class="mt-8 bg-white/90 border-4 border-[#4D9DE0] rounded-2xl p-4 text-center shadow-lg w-full max-w-lg animate-slide-up">
             <div class="grid grid-cols-3 gap-2 mb-2 text-xl font-[Chewy] text-[#3D2314] border-b-4 border-[#4D9DE0] pb-2">
@@ -299,7 +374,7 @@
         <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-green-500 border-8 bg-green-50">
 
             <h2 class="title-cartoon text-6xl text-green-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">
-                Génial ! 🎉</h2>
+                Génial ! </h2>
             <p class="text-2xl font-bold mb-6 text-green-800">Tout est parfait ! Regarde ce que je vois :</p>
 
             <!-- Cadre style Polaroid -->
@@ -308,7 +383,7 @@
                     class="w-full aspect-video bg-gray-200 rounded overflow-hidden relative border-2 border-gray-300 inset-shadow">
                     <!-- Fausse image de la caméra -->
                     <div id="photo-loading" class="absolute inset-0 bg-yellow-100 flex flex-col items-center justify-center z-10">
-                        <div class="text-4xl animate-bounce-slow mb-2">📸</div>
+                        <div class="text-4xl animate-bounce-slow mb-2"></div>
                         <p class="font-[Chewy] text-yellow-600 text-xl">Développement...</p>
                     </div>
                     <img id="robot-photo" src="" alt="Vue Camera" class="w-full h-full object-cover relative z-0 hidden">
@@ -319,7 +394,7 @@
 
             <button onclick="resetApp()" class="btn-game w-full text-2xl"
                 style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
-                Nouvelle Mission ! 🔄
+                Nouvelle Mission ! 
             </button>
         </div>
     </div>
@@ -329,25 +404,68 @@
     <!-- Modal Erreur (Timeout bonbons introuvables) -->
     <div id="modal-error" class="hidden-screen fixed inset-0 bg-red-900/60 z-50 flex items-center justify-center backdrop-blur-md p-4">
         <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-red-500 border-8 bg-red-50">
-            <h2 class="title-cartoon text-6xl text-red-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Oh non... 😢</h2>
-            <p id="error-message-txt" class="text-2xl font-bold mb-6 text-red-800">Je n'ai pas trouvé tous les bonbons !</p>
-            <button onclick="retryOrder()" class="btn-game w-full text-2xl" style="background-color: #ff4757; box-shadow: 0px 8px 0px #c0392b;">
-                Recommencer 🔄
+            <h2 class="title-cartoon text-5xl md:text-6xl text-red-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Bonbons insuffisants !</h2>
+            <p id="error-message-txt" class="text-xl md:text-2xl font-bold mb-4 text-red-800">Je n'ai pas trouvé assez de bonbons sur le tapis !</p>
+            
+            <!-- Tableau de récapitulatif -->
+            <div id="error-recap-details" class="bg-white border-4 border-red-300 rounded-xl p-4 mb-6 text-left hidden">
+                <div class="grid grid-cols-2 gap-4 text-center font-[Chewy] text-xl mb-2 border-b-2 border-gray-200 pb-2">
+                    <div class="text-green-600">Bonbons attrapés</div>
+                    <div class="text-red-500">Bonbons manquants</div>
+                </div>
+                <div id="error-recap-content" class="grid grid-cols-2 gap-4 text-center font-bold text-lg font-[Quicksand]">
+                    <!-- Dynamique -->
+                </div>
+            </div>
+
+            <button onclick="retryQuizAfterError()" class="btn-game w-full text-2xl" style="background-color: #ff4757; box-shadow: 0px 8px 0px #c0392b;">
+                Recommencer le quizz
             </button>
         </div>
     </div>
 
-    <!-- Global Loading Modal (Theme Saveur Savante) -->
-    <div id="modal-global-loading"
-        class="hidden-screen fixed inset-0 bg-[#FFF0F5]/90 z-[100] flex flex-col items-center justify-center backdrop-blur-sm">
-        <div class="text-center animate-bounce-slow">
-            <div class="text-8xl animate-spin-slow mb-6 inline-block"
-                style="filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.2));">🍭</div>
-            <h2 id="loading-text" class="title-cartoon text-5xl text-primary"
-                style="text-shadow: 2px 2px 0 var(--text-dark);">Chargement...</h2>
+    <!-- MODALE INTRO QUIZ (Défi scientifique) -->
+    <div id="modal-intro-quiz" class="hidden-screen fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="game-panel w-full max-w-lg p-8 text-center animate-pop-in relative">
+            
+            <!-- Mascotte -->
+            <div class="absolute -top-20 left-1/2 transform -translate-x-1/2">
+                <svg class="w-32 h-32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="15" y="20" width="70" height="65" rx="30" fill="#FFC933" stroke="#3D2314" stroke-width="3" />
+                    <!-- Yeux un peu plus déterminés -->
+                    <path d="M 25 35 Q 35 40 45 35" fill="none" stroke="#3D2314" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M 55 35 Q 65 40 75 35" fill="none" stroke="#3D2314" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="35" cy="45" r="5" fill="white" stroke="#3D2314" stroke-width="2" />
+                    <circle cx="65" cy="45" r="5" fill="white" stroke="#3D2314" stroke-width="2" />
+                    <path d="M35,65 Q50,75 65,65" fill="none" stroke="#3D2314" stroke-width="4" stroke-linecap="round" />
+                </svg>
+            </div>
+
+            <div class="mt-12">
+                <h2 class="font-[Chewy] text-5xl text-[#3D2314] mb-4 tracking-wide">Pourrais-tu défier la science ?</h2>
+                <div class="bg-blue-50 border-4 border-blue-200 rounded-2xl p-4 mb-8">
+                    <p class="font-bold text-2xl font-[Quicksand] text-gray-800">
+                        Prouve tes connaissances en robotique ! <br>
+                        Obtiens au moins <span class="text-green-600 font-black">3 bonnes réponses</span> pour accéder à la machine à bonbons.
+                    </p>
+                </div>
+
+                <button onclick="hideModal('modal-intro-quiz'); startQuiz();" class="btn-game btn-game-yellow w-full text-3xl">
+                    Je relève le défi ! 
+                </button>
+            </div>
         </div>
     </div>
 
+    <!-- Global Loading Modal (Theme Saveur Savante) -->
+    <div id="modal-global-loading" class="hidden-screen fixed inset-0 bg-[#FFF0F5]/90 z-[100] flex flex-col items-center justify-center backdrop-blur-sm">
+        <div class="text-center animate-bounce-slow">
+            <div class="text-8xl animate-spin-slow mb-6 inline-block" style="filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.2));">🍭</div>
+            <h2 id="loading-text" class="title-cartoon text-5xl text-primary" style="text-shadow: 2px 2px 0 var(--text-dark);">Chargement...</h2>
+        </div>
+    </div>
+
+    <script src="/static/questions.js?v=1"></script>
     <script src="/static/main.js?v=10"></script>
 </body>
 

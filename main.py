@@ -109,7 +109,11 @@ def demarrer_tri():
         total_a_prendre = sum(commande_actuelle.values())
         if total_a_prendre > 15:
             time.sleep(4)
-            return {"status": "error", "message": "Oups ! Timeout simulé : je n'ai pas trouvé assez de bonbons !"}
+            return {
+                "status": "error", 
+                "message": "Oups ! Timeout simulé : je n'ai pas trouvé assez de bonbons !",
+                "details": get_status_tri()
+            }
             
         for couleur in ["vert", "rouge", "bleu"]:
             while commande_actuelle[couleur] > 0:
@@ -141,7 +145,11 @@ def demarrer_tri():
         if time.time() - time_start > 15:
             print("Erreur : Timeout de 25s dépassé.")
             robot.stop_conveyor(conveyor_id)
-            return {"status": "error", "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !"}
+            return {
+                "status": "error", 
+                "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !",
+                "details": get_status_tri()
+            }
             
         try:
             # On cherche N'IMPORTE QUEL objet sur le tapis
