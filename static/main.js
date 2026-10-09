@@ -524,23 +524,23 @@ function prepareLevel(level) {
     // Shuffle base
     let mixed = [...logicStepsBase].sort(() => Math.random() - 0.5);
     
-    // Choose which cards have no image
+    // Choose which cards have hidden text
     let hiddenIndices = [];
     if (level === 2) {
-        // 3 random cards have hidden images
+        // 3 random cards have hidden text
         while (hiddenIndices.length < 3) {
             let r = Math.floor(Math.random() * 6);
             if (!hiddenIndices.includes(r)) hiddenIndices.push(r);
         }
     } else if (level === 3) {
-        // All 6 cards have hidden images
+        // All 6 cards have hidden text
         hiddenIndices = [0, 1, 2, 3, 4, 5];
     }
 
     logicDeck = mixed.map((step, idx) => ({
         ...step,
-        isHiddenImage: hiddenIndices.includes(idx),
-        isHiddenText: false // Jamais de texte mystère
+        isHiddenImage: false, // Toujours afficher l'image maintenant
+        isHiddenText: hiddenIndices.includes(idx)
     }));
 
     logicSlots = [null, null, null, null, null, null];
@@ -548,9 +548,9 @@ function prepareLevel(level) {
     if (level === 1) {
         document.getElementById('logic-instructions').textContent = "NIVEAU 1 : Remets les cartes dans le bon ordre en haut !";
     } else if (level === 2) {
-        document.getElementById('logic-instructions').textContent = "NIVEAU 2 : Attention, 3 images ont disparu ! Fie-toi au texte.";
+        document.getElementById('logic-instructions').textContent = "NIVEAU 2 : Attention, 3 textes ont disparu ! Fie-toi aux images.";
     } else if (level === 3) {
-        document.getElementById('logic-instructions').textContent = "NIVEAU 3 : Mode Expert ! Plus aucune image, trouve l'ordre avec les textes.";
+        document.getElementById('logic-instructions').textContent = "NIVEAU 3 : Mode Expert ! Plus aucun texte, trouve l'ordre uniquement avec les images.";
     }
 
     renderLogicGame(false);
@@ -600,10 +600,12 @@ function renderLogicGame(isDemo) {
                 slotEl.appendChild(imgEl);
             }
 
-            const textEl = document.createElement('span');
-            textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
-            textEl.textContent = slotData.text;
-            slotEl.appendChild(textEl);
+            if (!slotData.isHiddenText) {
+                const textEl = document.createElement('span');
+                textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
+                textEl.textContent = slotData.text;
+                slotEl.appendChild(textEl);
+            }
 
             if (!isDemo) {
                 slotEl.onclick = () => returnCardToDeck(index);
@@ -634,11 +636,13 @@ function renderLogicGame(isDemo) {
             cardEl.appendChild(imgEl);
         }
 
-        const textEl = document.createElement('span');
-        textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
-        textEl.textContent = cardData.text;
+        if (!cardData.isHiddenText) {
+            const textEl = document.createElement('span');
+            textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
+            textEl.textContent = cardData.text;
+            cardEl.appendChild(textEl);
+        }
 
-        cardEl.appendChild(textEl);
         cardEl.onclick = () => moveCardToSlot(deckIndex);
 
         deckContainer.appendChild(cardEl);
