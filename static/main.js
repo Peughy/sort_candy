@@ -465,10 +465,14 @@ const logicStepsBase = [
 
 let logicDeck = [];
 let logicSlots = [null, null, null, null, null, null];
-let isLogicLevel2 = false;
+let logicCurrentLevel = 1;
+let logicAttempts = 0;
+let logicScores = { 1: "Non Validé", 2: "Non Validé", 3: "Non Validé" };
 
-function startLogicGameDemo() {
-    isLogicLevel2 = false;
+async function startLogicGameDemo() {
+    logicCurrentLevel = 1;
+    logicAttempts = 0;
+    logicScores = { 1: "Non Validé", 2: "Non Validé", 3: "Non Validé" };
     showScreen('screen-logic-game');
     document.getElementById('logic-instructions').textContent = "Lis bien ces étapes pour comprendre comment je fonctionne.";
     document.getElementById('logic-divider').classList.add('hidden');
@@ -476,12 +480,14 @@ function startLogicGameDemo() {
     document.getElementById('btn-logic-shuffle').classList.add('hidden');
 
     const btnAction = document.getElementById('btn-logic-action');
-    btnAction.textContent = "🤖 Lancer la démo du robot !";
+    btnAction.textContent = "Lancer la démo du robot !";
     btnAction.onclick = async () => {
         btnAction.disabled = true;
         btnAction.textContent = "Démo en cours...";
         try {
-            await fetch('/run_demo', { method: 'POST' });
+            const response = await fetch('/run_demo', { method: 'POST' });
+            const data = await response.json();
+            console.log(`[SERVEUR] :`, data.message);
         } catch (e) { }
         btnAction.disabled = false;
         btnAction.textContent = "J'ai compris, on joue !";
@@ -493,23 +499,19 @@ function startLogicGameDemo() {
     renderLogicGame(true); // true = demo mode (no clicking)
 }
 
-function startLogicLevel2() {
-    isLogicLevel2 = true;
+function handleNextLevelClick() {
+    hideModal('modal-logic-success');
+    if (logicCurrentLevel === 1) {
+        startLogicLevel2();
+    } else if (logicCurrentLevel === 2) {
+        startLogicLevel3();
+    }
+}
+
+function prepareLevel(level) {
+    logicCurrentLevel = level;
+    logicAttempts = 0;
     showScreen('screen-logic-game');
-    document.getElementById('logic-instructions').textContent = "NIVEAU 2 : Attention, certaines étapes sont cachées ! Retrouve l'ordre.";
-
-    // Shuffle logicDeck with level 2 modifier
-    let mixed = [...logicStepsBase].sort(() => Math.random() - 0.5);
-    logicDeck = mixed.map((step, idx) => {
-        // Hide every other text randomly for level 2
-        return {
-            ...step,
-            isHiddenText: Math.random() > 0.5 // 50% chance to hide text and show "?"
-        };
-    });
-
-    logicSlots = [null, null, null, null, null, null];
-
     document.getElementById('logic-divider').classList.remove('hidden');
     document.getElementById('logic-deck').classList.remove('hidden');
     document.getElementById('btn-logic-shuffle').classList.remove('hidden');
@@ -519,26 +521,51 @@ function startLogicLevel2() {
     btnAction.onclick = validateLogicGame;
     btnAction.classList.remove('hidden');
 
+    // Shuffle base
+    let mixed = [...logicStepsBase].sort(() => Math.random() - 0.5);
+    
+    // Choose which cards have no image
+    let hiddenIndices = [];
+    if (level === 2) {
+        // 3 random cards have hidden images
+        while (hiddenIndices.length < 3) {
+            let r = Math.floor(Math.random() * 6);
+            if (!hiddenIndices.includes(r)) hiddenIndices.push(r);
+        }
+    } else if (level === 3) {
+        // All 6 cards have hidden images
+        hiddenIndices = [0, 1, 2, 3, 4, 5];
+    }
+
+    logicDeck = mixed.map((step, idx) => ({
+        ...step,
+        isHiddenImage: hiddenIndices.includes(idx),
+        isHiddenText: false // Jamais de texte mystère
+    }));
+
+    logicSlots = [null, null, null, null, null, null];
+    
+    if (level === 1) {
+        document.getElementById('logic-instructions').textContent = "NIVEAU 1 : Remets les cartes dans le bon ordre en haut !";
+    } else if (level === 2) {
+        document.getElementById('logic-instructions').textContent = "NIVEAU 2 : Attention, 3 images ont disparu ! Fie-toi au texte.";
+    } else if (level === 3) {
+        document.getElementById('logic-instructions').textContent = "NIVEAU 3 : Mode Expert ! Plus aucune image, trouve l'ordre avec les textes.";
+    }
+
     renderLogicGame(false);
 }
 
+function startLogicLevel2() {
+    prepareLevel(2);
+}
+
+function startLogicLevel3() {
+    prepareLevel(3);
+}
+
 function shuffleAndStartLogic() {
-    document.getElementById('logic-instructions').textContent = "Clique sur les cartes en bas pour les remettre dans le bon ordre en haut !";
-    document.getElementById('logic-divider').classList.remove('hidden');
-    document.getElementById('logic-deck').classList.remove('hidden');
-    document.getElementById('btn-logic-shuffle').classList.remove('hidden');
-
-    const btnAction = document.getElementById('btn-logic-action');
-    btnAction.textContent = "Vérifier ma réponse !";
-    btnAction.onclick = validateLogicGame;
-
-    // Mélange des cartes
-    logicDeck = [...logicStepsBase].sort(() => Math.random() - 0.5);
-    // Reset hidden text for level 1
-    logicDeck = logicDeck.map(step => ({ ...step, isHiddenText: false }));
-    logicSlots = [null, null, null, null, null, null];
-
-    renderLogicGame(false);
+    prepareLevel(1);
 }
 
 function shuffleDeckOnly() {
@@ -565,7 +592,7 @@ function renderLogicGame(isDemo) {
         slotEl.appendChild(numBadge);
 
         if (slotData) {
-            if (!slotData.isHiddenText) {
+            if (!slotData.isHiddenImage) {
                 const imgEl = document.createElement('img');
                 imgEl.src = slotData.img;
                 imgEl.className = 'h-32 md:h-40 w-auto max-w-full object-contain mx-auto rounded pointer-events-none mb-2 border border-gray-300 bg-white';
@@ -575,7 +602,7 @@ function renderLogicGame(isDemo) {
 
             const textEl = document.createElement('span');
             textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
-            textEl.textContent = slotData.isHiddenText ? "??? (Mystère) ???" : slotData.text;
+            textEl.textContent = slotData.text;
             slotEl.appendChild(textEl);
 
             if (!isDemo) {
@@ -599,7 +626,7 @@ function renderLogicGame(isDemo) {
         const cardEl = document.createElement('div');
         cardEl.className = 'w-full min-h-[160px] md:min-h-[220px] flex flex-col items-center justify-center p-2 bg-white border-4 border-[#FF5A92] rounded-xl text-center cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-transform shadow';
 
-        if (!cardData.isHiddenText) {
+        if (!cardData.isHiddenImage) {
             const imgEl = document.createElement('img');
             imgEl.src = cardData.img;
             imgEl.className = 'h-32 md:h-40 w-auto max-w-full object-contain mx-auto rounded pointer-events-none mb-2 border border-gray-300 bg-white';
@@ -609,7 +636,7 @@ function renderLogicGame(isDemo) {
 
         const textEl = document.createElement('span');
         textEl.className = 'font-[Quicksand] font-bold text-[#3D2314] text-sm md:text-base pointer-events-none leading-tight';
-        textEl.textContent = cardData.isHiddenText ? "??? (Mystère) ???" : cardData.text;
+        textEl.textContent = cardData.text;
 
         cardEl.appendChild(textEl);
         cardEl.onclick = () => moveCardToSlot(deckIndex);
@@ -651,12 +678,54 @@ function validateLogicGame() {
     });
 
     if (isWin) {
-        showModal('modal-logic-success');
+        logicScores[logicCurrentLevel] = "Validé";
+        if (logicCurrentLevel === 3) {
+            showFinalLogicModal();
+        } else {
+            const btnNext = document.getElementById('btn-next-level');
+            if (btnNext) {
+                btnNext.textContent = logicCurrentLevel === 1 ? "Niveau 2 (Images masquées)" : "Niveau 3 (Expert)";
+            }
+            showModal('modal-logic-success');
+        }
     } else {
-        // Tremblement et message
-        const slotsContainer = document.getElementById('logic-slots');
-        slotsContainer.classList.add('animate-bounce-slow');
-        setTimeout(() => slotsContainer.classList.remove('animate-bounce-slow'), 500);
-        alert("Oups ! L'ordre n'est pas le bon. Le robot est perdu ! Réessaie.");
+        logicAttempts++;
+        if (logicAttempts >= 3) {
+            logicScores[logicCurrentLevel] = "Non Validé";
+            if (logicCurrentLevel === 3) {
+                showFinalLogicModal();
+            } else {
+                alert("Dommage, tu n'as pas trouvé. Passons au niveau suivant !");
+                if (logicCurrentLevel === 1) startLogicLevel2();
+                else startLogicLevel3();
+            }
+        } else {
+            // Tremblement et message
+            const slotsContainer = document.getElementById('logic-slots');
+            slotsContainer.classList.add('animate-bounce-slow');
+            setTimeout(() => slotsContainer.classList.remove('animate-bounce-slow'), 500);
+            alert("Oups ! L'ordre n'est pas le bon. Il te reste " + (3 - logicAttempts) + " essai(s).");
+        }
     }
+}
+
+function showFinalLogicModal() {
+    document.getElementById('score-lvl1').textContent = logicScores[1];
+    document.getElementById('score-lvl1').className = logicScores[1] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
+    
+    document.getElementById('score-lvl2').textContent = logicScores[2];
+    document.getElementById('score-lvl2').className = logicScores[2] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
+    
+    document.getElementById('score-lvl3').textContent = logicScores[3];
+    document.getElementById('score-lvl3').className = logicScores[3] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
+    
+    const count = Object.values(logicScores).filter(s => s === "Validé").length;
+    let msg = "Bravo, tu as terminé le didacticiel !";
+    if (count === 3) msg = "Incroyable ! Un vrai expert en robotique !";
+    else if (count === 2) msg = "Super travail, encore un peu d'entraînement et ça sera parfait !";
+    else if (count === 1) msg = "Bien joué, c'est un bon début !";
+    else msg = "Pas de chance cette fois, l'important c'est de s'amuser !";
+    
+    document.getElementById('logic-final-msg').textContent = msg;
+    showModal('modal-logic-final');
 }

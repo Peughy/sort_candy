@@ -13,7 +13,7 @@ from pyniryo import NiryoRobot, uncompress_image, ConveyorDirection, ObjectColor
 # CONFIGURATION ET CONNEXION AU ROBOT NIRYO
 # ==========================================
 ROBOT_IP = '169.254.200.200'
-WORKSPACE_NAME = "scienceCONVOYER"
+WORKSPACE_NAME = "JDSV3"
 
 # --- CORRECTIONS DE PRIS (Offsets) ---
 OFFSET_X = 0.010   
@@ -21,10 +21,13 @@ OFFSET_Y = 0.020
 OFFSET_Z = 0.000 
 
 # Poses
-OBSERVATION_POSE = [0.187, -0.011, 0.226, 3.077, 1.035, 2.995]
-PLATEAU_POSE = [0.047, 0.268, 0.089, -2.87, 1.357, -1.382]
-PHOTO_POSE = [0, 0.204, 0.262, 3.012, 1.219, -1.762]
-INITIAL_POSE = [0.165, 0, 0.179, 0.02, 0.769, -0.001]
+OBSERVATION_POSE = [0.144, 0.002, 0.284, 2.472, 1.359, 2.756]
+INITIAL_POSE = [0.165, 0, 0.179, -0.049, 0.764, -0.001]
+PLATEAU_POSE_INT = [0.001, 0.283, 0.198, 1.861, 1.409, -2.141]
+PLATEAU_POSE = [0.03, 0.296, 0.028, 2.32, 1.385, -1.731]
+
+PHOTO_POSE = [0.014, 0.196, 0.228, 1.219, 1.416, -1.388]
+
 
 try:
     print(f"Tentative de connexion au robot sur {ROBOT_IP}...")
@@ -33,6 +36,7 @@ try:
     robot.update_tool()
     
     conveyor_id = robot.set_conveyor()
+
     
     print("Positionnement en mode observation...")
     robot.move(PoseObject(*OBSERVATION_POSE))
@@ -47,14 +51,9 @@ except Exception as e:
     robot = None
     conveyor_id = None
 # ==========================================
-# POSITIONS DIDACTICIEL (Le robot effectue les étapes de tri)
-# Remplissez les coordonnées (x, y, z, roll, pitch, yaw) pour chaque position
-POS1 = (0.2, 0.0, 0.2, 0.0, 1.57, 0.0) # Se place au-dessus de la zone de départ
-POS2 = (0.2, 0.0, 0.1, 0.0, 1.57, 0.0) # Descend pour attraper le bonbon
-POS3 = (0.2, 0.2, 0.15, 0.0, 1.57, 0.0) # Dépose le bonbon sur le tapis
-# L'étape 4 est gérée par le tapis roulant
-POS5 = (0.2, -0.2, 0.1, 0.0, 1.57, 0.0) # Attrape le bonbon à la fin du tapis
-POS6 = (0.1, -0.2, 0.2, 0.0, 1.57, 0.0) # Lâche le bonbon dans le bac final
+POS2 = (0.108, -0.311, 0.115, -2.466, 1.007, -2.716) # Descend pour attraper le bonbon
+POS3 = (0.21, -0.321, 0.087, 2.253, 1.519, 1.602) # Dépose le bonbon sur le tapis
+POS4 = (0.226, 0.092, 0.086, 2.508, 1.32, -3.036) # Attrape le bonbon à la fin du tapis
 # ==========================================
 
 app = FastAPI()
@@ -265,30 +264,34 @@ def run_didacticiel_demo():
         return {"status": "ok", "message": "Démo simulée terminée !"}
     
     try:
-        # Étape 1
-        robot.move(PoseObject(*POS1))
+        robot.move(PoseObject(*OBSERVATION_POSE))
         time.sleep(0.5)
-        # Étape 2
+        
         robot.move(PoseObject(*POS2))
         robot.grasp_with_tool()
         time.sleep(0.5)
-        # Étape 3
-        robot.move(PoseObject(*POS1)) # remonte
+        
+        robot.move(PoseObject(*OBSERVATION_POSE))
         robot.move(PoseObject(*POS3))
         robot.release_with_tool()
-        # Étape 4 (Tapis)
-        robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
-        time.sleep(4)
-        robot.stop_conveyor(conveyor_id)
-        # Étape 5
-        robot.move(PoseObject(*POS5))
-        robot.grasp_with_tool()
         time.sleep(0.5)
-        # Étape 6
-        robot.move(PoseObject(*POS1)) # remonte pour ne pas taper
-        robot.move(PoseObject(*POS6))
+        robot.move(PoseObject(*OBSERVATION_POSE)) 
+        
+        
+        robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
+        time.sleep(13)
+        robot.stop_conveyor(conveyor_id)
+        
+        robot.move(PoseObject(*POS4)) 
+        robot.grasp_with_tool()
+        robot.move(PoseObject(*OBSERVATION_POSE))
+        time.sleep(0.5)
+        
+        robot.move(PoseObject(*PLATEAU_POSE_INT)) 
+        robot.move(PoseObject(*PLATEAU_POSE))
         robot.release_with_tool()
-        # Retour observ
+        time.sleep(0.5)
+        
         robot.move(PoseObject(*OBSERVATION_POSE))
         return {"status": "ok", "message": "Démo terminée !"}
     except Exception as e:

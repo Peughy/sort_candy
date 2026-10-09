@@ -95,10 +95,10 @@
             <h2 class="title-cartoon text-5xl text-primary mb-8" style="text-shadow: 2px 2px 0 var(--text-dark);">Que veux-tu faire ?</h2>
             <div class="flex flex-col gap-4">
                 <button onclick="hideModal('modal-choice'); showModal('modal-intro-quiz');" class="btn-game w-full text-3xl">
-                    🧠 Quiz (Gagner des bonbons)
+                     Quiz (Gagner des bonbons)
                 </button>
                 <button onclick="hideModal('modal-choice'); startLogicGameDemo();" class="btn-game btn-game-yellow w-full text-3xl">
-                    🤖 Didacticiel (Apprendre)
+                     Didacticiel (Apprendre)
                 </button>
             </div>
         </div>
@@ -344,7 +344,7 @@
             <button onclick="validerChargement()" class="btn-game btn-game-yellow w-full text-3xl mb-4">
                 C'est prêt ! 
             </button>
-            <button onclick="cancelOrder()" class="btn-game w-full text-2xl" style="background-color: #f1f2f6; color: #3D2314; box-shadow: 0px 8px 0px #dcdde1;">
+            <button onclick="cancelOrder()" class="btn-game w-full text-2xl" style="background-color: #f1f2f6; color: white; box-shadow: 0px 8px 0px #dcdde1;">
                  Modifier ma commande
             </button>
         </div>
@@ -501,8 +501,8 @@
             </div>
             
             <div class="flex flex-col md:flex-row gap-4 w-full">
-                <button id="btn-logic-shuffle" onclick="shuffleDeckOnly()" class="btn-game flex-1 text-2xl hidden" style="background-color: #FFC933; box-shadow: 0px 8px 0px #D6A420; color: #3D2314;">
-                    🔀 Mélanger
+                <button id="btn-logic-shuffle" onclick="shuffleDeckOnly()" class="btn-game flex-1 text-2xl hidden" style="background-color: #FFC933; box-shadow: 0px 8px 0px #D6A420; color: white;">
+                     Mélanger
                 </button>
                 <button id="btn-logic-action" onclick="shuffleAndStartLogic()" class="btn-game flex-[2] text-3xl" style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
                     J'ai tout compris, on joue !
@@ -518,8 +518,8 @@
         <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-green-500 border-8 bg-green-50">
             <h2 class="title-cartoon text-6xl text-green-500 mb-4" style="text-shadow: 2px 2px 0 var(--text-dark);">Bravo !</h2>
             <p class="text-2xl font-bold mb-6 text-green-800 font-[Quicksand]">Tu as trouvé le bon ordre de tri !</p>
-            <button onclick="hideModal('modal-logic-success'); startLogicLevel2();" class="btn-game w-full text-2xl mb-4" style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
-                Niveau 2 (Difficile)
+            <button id="btn-next-level" onclick="handleNextLevelClick()" class="btn-game w-full text-2xl mb-4" style="background-color: #2ed573; box-shadow: 0px 8px 0px #21a557;">
+                Niveau Suivant
             </button>
             <button onclick="hideModal('modal-logic-success'); showScreen('screen-home');" class="btn-game btn-game-yellow w-full text-2xl">
                 Retour au menu
@@ -527,8 +527,36 @@
         </div>
     </div>
 
-    <script src="/static/questions.js?v=1"></script>
-    <script src="/static/main.js?v=13"></script>
+    <!-- Modale Score Final Didacticiel -->
+    <div id="modal-logic-final" class="hidden-screen fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-md p-4">
+        <div class="game-panel w-full max-w-lg p-6 text-center animate-pop-in border-blue-500 border-8 bg-blue-50">
+            <h2 class="title-cartoon text-5xl text-blue-600 mb-6" style="text-shadow: 2px 2px 0 var(--text-dark);">Résultats du Test</h2>
+            
+            <div class="flex flex-col gap-4 text-left font-[Quicksand] text-xl font-bold text-gray-800 mb-8 w-3/4 mx-auto">
+                <div class="flex justify-between items-center bg-white p-3 rounded shadow-sm">
+                    <span>Niveau 1 :</span>
+                    <span id="score-lvl1" class="text-green-600">Validé</span>
+                </div>
+                <div class="flex justify-between items-center bg-white p-3 rounded shadow-sm">
+                    <span>Niveau 2 :</span>
+                    <span id="score-lvl2" class="text-green-600">Validé</span>
+                </div>
+                <div class="flex justify-between items-center bg-white p-3 rounded shadow-sm">
+                    <span>Niveau 3 :</span>
+                    <span id="score-lvl3" class="text-red-500">Non Validé</span>
+                </div>
+            </div>
+
+            <p id="logic-final-msg" class="text-2xl font-bold mb-6 text-blue-900 font-[Quicksand]">Bravo, tu es un vrai roboticien !</p>
+            
+            <button onclick="hideModal('modal-logic-final'); showScreen('screen-home');" class="btn-game btn-game-yellow w-full text-2xl">
+                Retour à l'accueil
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/questions.js?v=2"></script>
+    <script src="/static/main.js?v=14"></script>
 </body>
 
 </html>
