@@ -51,9 +51,9 @@ except Exception as e:
     robot = None
     conveyor_id = None
 # ==========================================
-POS2 = (0.108, -0.311, 0.115, -2.466, 1.007, -2.716) # Descend pour attraper le bonbon
-POS3 = (0.21, -0.321, 0.087, 2.253, 1.519, 1.602) # Dépose le bonbon sur le tapis
-POS4 = (0.226, 0.092, 0.086, 2.508, 1.32, -3.036) # Attrape le bonbon à la fin du tapis
+POS2 = (0.108, -0.311, 0.115, -2.466, 1.007, -2.716) 
+POS3 = (0.21, -0.321, 0.087, 2.253, 1.519, 1.602) 
+POS4 = (0.226, 0.092, 0.086, 2.508, 1.32, -3.036) 
 # ==========================================
 
 app = FastAPI()
@@ -125,7 +125,7 @@ def demarrer_tri():
             
         for couleur in ["vert", "rouge", "bleu"]:
             while commande_actuelle[couleur] > 0:
-                time.sleep(1.5) # Simule le temps de prendre le bonbon
+                time.sleep(1.5) 
                 commande_actuelle[couleur] -= 1
                 print(f"[SIMULATION] Bonbon {couleur} attrapé ! Reste: {commande_actuelle}")
 
@@ -136,8 +136,7 @@ def demarrer_tri():
         photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
         
         return {"status": "ok", "message": "Tri terminé !", "photo": photo_b64}
-    # --------------------------------------------
-    # remise en position d'observation
+    
     robot.move(PoseObject(*OBSERVATION_POSE))
     # ----------- LOGIQUE RÉELLE ROBOT -----------
     print("Démarrage du convoyeur (vitesse 50)...")
@@ -149,7 +148,6 @@ def demarrer_tri():
     inv_mapping = {"GREEN": "vert", "RED": "rouge", "BLUE": "bleu"}
     
     while sum(commande_actuelle.values()) > 0:
-        # Vérification du timeout (25 secondes)
         if time.time() - time_start > 15:
             print("Erreur : Timeout de 25s dépassé.")
             robot.stop_conveyor(conveyor_id)

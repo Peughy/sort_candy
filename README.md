@@ -10,17 +10,20 @@ _(Insérez vos photos ici !)_
 
 ### L'Interface Utilisateur
 
-![L'interface web - Choix des bonbons](chemin/vers/la/photo_interface.jpg)
+![L'interface web - Choix des bonbons](static/readme%20img/photo%20choix.jpeg)
 _L'interface web ludique où l'enfant passe sa commande de bonbons._
+
+![L'interface web - Choix des bonbons](static/readme%20img/platform.jpeg)
+_L'interface web ludique où l'enfant lance la demo de tri_
 
 ### Le Robot en Action
 
-![Le robot Niryo triant les bonbons](chemin/vers/la/photo_robot.jpg)
+![Le robot Niryo triant les bonbons](static/readme%20img/robot.jpeg)
 _Le bras Niryo scannant et triant les bonbons sur le tapis roulant._
 
 ---
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
 - **Application Web Interactive** : Thème dessin animé avec transitions animées, gérée en HTML/JS pur avec TailwindCSS.
 - **Serveur Asynchrone** : API propulsée par **FastAPI**.
@@ -33,7 +36,7 @@ _Le bras Niryo scannant et triant les bonbons sur le tapis roulant._
 
 ---
 
-## 🛠️ Installation & Lancement
+## Installation & Lancement
 
 1. **Prérequis** :
    - Python 3.12+
@@ -51,7 +54,7 @@ _Le bras Niryo scannant et triant les bonbons sur le tapis roulant._
    ```
    > Le serveur tourne par défaut sur `http://127.0.0.1:8000`
 
-## 🧠 Architecture
+## Architecture
 
 - `main.py` : Le serveur FastAPI et la logique de pilotage du Niryo.
 - `templates/index.html` : L'interface web de la "Maison des Délices".

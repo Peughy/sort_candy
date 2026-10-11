@@ -394,7 +394,7 @@ function handleAnswer(selectedIndex, btnElement) {
         } else {
             finishQuiz();
         }
-    }, 2000); // 1.5s pour voir la correction
+    }, 2000);
 }
 
 function finishQuiz() {
@@ -523,7 +523,7 @@ function prepareLevel(level) {
 
     // Shuffle base
     let mixed = [...logicStepsBase].sort(() => Math.random() - 0.5);
-    
+
     // Choose which cards have hidden text
     let hiddenIndices = [];
     if (level === 2) {
@@ -544,7 +544,7 @@ function prepareLevel(level) {
     }));
 
     logicSlots = [null, null, null, null, null, null];
-    
+
     if (level === 1) {
         document.getElementById('logic-instructions').textContent = "NIVEAU 1 : Remets les cartes dans le bon ordre en haut !";
     } else if (level === 2) {
@@ -716,20 +716,20 @@ function validateLogicGame() {
 function showFinalLogicModal() {
     document.getElementById('score-lvl1').textContent = logicScores[1];
     document.getElementById('score-lvl1').className = logicScores[1] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
-    
+
     document.getElementById('score-lvl2').textContent = logicScores[2];
     document.getElementById('score-lvl2').className = logicScores[2] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
-    
+
     document.getElementById('score-lvl3').textContent = logicScores[3];
     document.getElementById('score-lvl3').className = logicScores[3] === "Validé" ? "text-green-600 font-bold" : "text-red-500 font-bold";
-    
+
     const count = Object.values(logicScores).filter(s => s === "Validé").length;
     let msg = "Bravo, tu as terminé le didacticiel !";
     if (count === 3) msg = "Incroyable ! Un vrai expert en robotique !";
     else if (count === 2) msg = "Super travail, encore un peu d'entraînement et ça sera parfait !";
     else if (count === 1) msg = "Bien joué, c'est un bon début !";
     else msg = "Pas de chance cette fois, l'important c'est de s'amuser !";
-    
+
     document.getElementById('logic-final-msg').textContent = msg;
     showModal('modal-logic-final');
 }
