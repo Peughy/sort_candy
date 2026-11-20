@@ -1,66 +1,57 @@
-# 🍭 La Maison des Délices (Sort Candy)
+# Démonstration Automatisée – Bras Robotisé Niryo Ned2
 
-Bienvenue dans le projet **La Maison des Délices**, une installation interactive permettant à un bras robotique (Niryo) de préparer automatiquement une commande de bonbons personnalisée !
-
-Ce projet allie une interface web amusante pour les enfants, une API rapide en Python, et un contrôle matériel complet avec un bras robotisé, une caméra (OpenCV), et un tapis roulant.
-
-## 📸 Aperçu du Projet
-
-_(Insérez vos photos ici !)_
-
-### L'Interface Utilisateur
-
-![L'interface web - Choix des bonbons](static/readme%20img/photo%20choix.jpeg)
-_L'interface web ludique où l'enfant passe sa commande de bonbons._
-
-![L'interface web - Choix des bonbons](static/readme%20img/platform.jpeg)
-_L'interface web ludique où l'enfant lance la demo de tri_
-
-### Le Robot en Action
-
-![Le robot Niryo triant les bonbons](static/readme%20img/robot.jpeg)
-_Le bras Niryo scannant et triant les bonbons sur le tapis roulant._
+Projet de démonstration technique visant à appréhender le pilotage, la programmation et l'intégration d'un bras robotisé collaboratif **Niryo Ned2** équipé d'un convoyeur (tapis roulant) et d'un distributeur gravitationnel
 
 ---
 
-## Fonctionnalités
+## Objectifs pédagogiques et compétences acquises
 
-- **Application Web Interactive** : Thème dessin animé avec transitions animées, gérée en HTML/JS pur avec TailwindCSS.
-- **Serveur Asynchrone** : API propulsée par **FastAPI**.
-- **Contrôle Robotique** :
-  - Détection d'objets (bonbons) sur le tapis roulant via **vision par ordinateur (OpenCV / PyNiryo)**.
-  - Sélection intelligente : le robot attrape uniquement les couleurs demandées et laisse passer le reste.
-  - Suivi en temps réel de la progression (ramassés / restants) via un système de "polling" (AJAX).
-  - Prise de photo-souvenir de la commande terminée, envoyée en Base64 au site web.
-- **Mode Simulation Intégré** : Si le robot n'est pas branché, le serveur simule un temps de recherche et génère de fausses photos pour continuer à travailler sur le design du site web !
+* **Configuration réseau :** Paramétrage d'une liaison directe Ethernet avec adressage statique **IPv4** (`169.254.200.200`) pour la communication avec le contrôleur du robot.
+* **Mise en service et tests matériels :** Calibrage automatique des axes, détection et pilotage de l'outil (pince), test et commande du convoyeur via bus de communication.
+* **Cinématique et trajectoires :** Apprentissage et manipulation des repères du robot :
+  * Gestion des **joints** (angles des 6 axes) et des **poses** cartésiennes `(x, y, z, roll, pitch, yaw)`
+  * Création de points de passage intermédiaires pour sécuriser les trajectoires et éviter les collisions.
+* **Développement Python :** Automatisation complète d'un cycle industriel autonome à l'aide de la bibliothèque officielle **PyNiryo**.
 
 ---
 
-## Installation & Lancement
+## Fonctionnement du cycle de démonstration
 
-1. **Prérequis** :
-   - Python 3.12+
-   - FastAPI, Uvicorn, PyNiryo, OpenCV, Pydantic
+Le programme exécute en continu (`while True`) un cycle complet d'approvisionnement et de rangement autonome :
 
-2. **Installation des dépendances** :
+1. **Phase 1 – Distribution (Aller ordonné) :**
+   * Le robot prélève un pion à la sortie basse du distributeur vertical (`PICK_POSE`)
+   * Il le dépose sur le convoyeur, qui l'achemine jusqu'à la zone de travail
+   * Le robot récupère le pion en bout de tapis et le place successivement sur 5 emplacements définis du *workspace* (`pos1` à `pos5`)
 
+2. **Phase 2 – Rangement (Retour aléatoire) :**
+   * L'ordre des 5 positions est mélangé aléatoirement (`random.shuffle`) à chaque cycle.
+   * Le robot vient récupérer chaque pion sur le *workspace* dans cet ordre aléatoire et le réinjecte directement par le haut du distributeur (`RETURN_POSE`) pour recharger le système par gravité
+
+---
+
+## Aperçu du dispositif
+
+| Distributeur rempli | Dépôt sur le workspace | Fin de cycle et rechargement |
+| :---: | :---: | :---: |
+| ![Distributeur initial](static/readme_img/demo_img1.jpeg) | ![Dépose sur workspace](static/readme_img/demo_img2.jpeg) | ![Distributeur vidé](static/readme_img/demo_img3.jpeg) |
+
+---
+
+## Technologies et prérequis
+
+* **Matériel :** Robot Niryo Ned2, pince adaptative, convoyeur Niryo, distributeur de pions[cite: 13, 14].
+* **Langage :** Python 3
+* **Bibliothèque :** `pyniryo` (`pip install pyniryo`)
+* **Réseau :** Carte réseau configurée en IPv4 statique sur le même sous-réseau que le robot (`169.254.200.x`).
+
+---
+
+## Lancement du projet
+
+1. Connecter le PC au robot via câble Ethernet et vérifier le `ping` vers `169.254.200.200`.
+2. Remplir le magasin vertical avec les 5 pions[cite: 13].
+3. Exécuter le script principal :
    ```bash
-   pip install fastapi uvicorn pyniryo opencv-python pydantic
-   ```
-
-3. **Lancement du serveur** :
-   ```bash
-   uvicorn main:app --reload
-   ```
-   > Le serveur tourne par défaut sur `http://127.0.0.1:8000`
-
-## Architecture
-
-- `main.py` : Le serveur FastAPI et la logique de pilotage du Niryo.
-- `templates/index.html` : L'interface web de la "Maison des Délices".
-- `static/main.js` : La logique dynamique (animations, pop-ups, communication avec l'API).
-- `static/style.css` : Le design et les animations CSS.
-
----
-
-_Projet conçu pour explorer l'intégration matériel/logiciel (Vision par Ordinateur + Web) de façon ludique !_
+   python main.py
+4. Appuyer sur `Ctrl + C` dans le terminal pour déclencher l'arrêt propre (arrêt du convoyeur, retour en position initiale et fermeture de la connexion).
