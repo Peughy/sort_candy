@@ -1,19 +1,10 @@
 import time
-import cv2
-import base64
-import numpy as np
-from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 from pyniryo import NiryoRobot, uncompress_image, ConveyorDirection, ObjectColor, ObjectShape, PoseObject
 
 # ==========================================
 # CONFIGURATION ET CONNEXION AU ROBOT NIRYO
 # ==========================================
 ROBOT_IP = '169.254.200.200'
-WORKSPACE_NAME = "JDSV3"
 
 # --- CORRECTIONS DE PRIS (Offsets) ---
 OFFSET_X = 0.010   
@@ -21,13 +12,25 @@ OFFSET_Y = 0.020
 OFFSET_Z = 0.000 
 
 # Poses
-OBSERVATION_POSE = [0.144, 0.002, 0.284, 2.472, 1.359, 2.756]
-INITIAL_POSE = [0.165, 0, 0.179, -0.049, 0.764, -0.001]
-PLATEAU_POSE_INT = [0.001, 0.283, 0.198, 1.861, 1.409, -2.141]
-PLATEAU_POSE = [0.03, 0.296, 0.028, 2.32, 1.385, -1.731]
+# Format des coordonnées : (x, y, z, roll, pitch, yaw)
+INITIAL_POSE = (0.197, -0.008, 0.13, -0.077, 0.775, -0.041)                # initial pose[cite: 3]
+INTERMEDIAIRE_POSE = (0.195, -0.016, 0.21, 1.789, 1.489, 1.825)            # intermediaire pose[cite: 3, 5]
+PICK_POSE = (0.125, -0.191, 0.1, -2.235, 1.157, 2.689)                     # pick pose[cite: 3]
+INTER_PICK_POSE = (0.176, -0.191, 0.19, -2.083, 1.522, -2.06)              # inter pick pose[cite: 3]
+TAPIS_LESS_POS = (0.219, -0.279, 0.078, 2.612, 1.407, 1.504)               # tapis less pos[cite: 9]
+TAPIS_LESS_INT_AFTER_POSE = (0.218, -0.281, 0.094, -2.514, 1.468, 2.834)   # tapis less int after pose[cite: 10]
+TAPIS_PICK_POSE = (0.202, 0.278, 0.078, 2.228, 1.426, 2.351)               # tapis pick pose[cite: 7]
+TAPIS_PICK_INTER_POSE = (0.075, 0.257, 0.164, 1.486, 1.366, 1.735)         # tapis pick inter pose[cite: 6]
+TAPIS_PICK_INTER_INTER_POSE = (0.186, 0.263, 0.148, -1.885, 1.409, -1.765) # tapis pick inter inter pose[cite: 8]
 
-PHOTO_POSE = [0.014, 0.196, 0.228, 1.219, 1.416, -1.388]
+POS1 = (0.07, 0.207, 0.018, 2.402, 1.53, 2.727)                            # pos1[cite: 4, 5]
+POS2 = (0.07, 0.355, 0.017, 2.328, 1.515, 2.869)                           # pos2[cite: 4, 5]
+POS3 = (-0.085, 0.211, 0.018, -2.8, 1.378, -2.22)                          # pos3[cite: 4, 5, 6]
+POS4 = (-0.086, 0.371, 0.017, 1.891, 1.508, 2.717)                         # pos4[cite: 4, 6]
+POS5 = (-0.008, 0.281, 0.017, 2.32, 1.564, 3.09)                           # pos5[cite: 11]
 
+# Liste des 5 destinations
+POSITIONS_DEPOT = [POS1, POS2, POS3, POS4, POS5]
 
 try:
     print(f"Tentative de connexion au robot sur {ROBOT_IP}...")
@@ -37,260 +40,65 @@ try:
     
     conveyor_id = robot.set_conveyor()
 
-    
-    print("Positionnement en mode observation...")
-    robot.move(PoseObject(*OBSERVATION_POSE))
-    
-    ROBOT_CONNECTE = True
-    print("Robot connecté, calibré et prêt !")
+    # Répétition du cycle pour chacune des 5 positions
+    for i, target_pos in enumerate(POSITIONS_DEPOT, start=1):
+        print(f"--- Début du cycle {i}/{len(POSITIONS_DEPOT)} ---")
+
+        robot.move(PoseObject(*INTERMEDIAIRE_POSE))
+        time.sleep(0.5)
+        
+        # Prise au point de départ
+        robot.move(PoseObject(*PICK_POSE))
+        robot.grasp_with_tool()
+        time.sleep(0.5)
+        
+        # Dépose sur le tapis
+        robot.move(PoseObject(*INTER_PICK_POSE))
+        robot.move(PoseObject(*TAPIS_LESS_POS))
+        time.sleep(0.1)
+        robot.release_with_tool()
+        time.sleep(0.1)
+        robot.move(PoseObject(*TAPIS_LESS_INT_AFTER_POSE))
+        time.sleep(0.5)
+        robot.move(PoseObject(*INTERMEDIAIRE_POSE)) 
+        
+        # Avancement du tapis
+        robot.run_conveyor(conveyor_id, speed=75, direction=ConveyorDirection.FORWARD)
+        time.sleep(13)
+        robot.stop_conveyor(conveyor_id)
+
+        # Prise en fin de tapis
+        robot.move(PoseObject(*TAPIS_PICK_POSE))
+        robot.grasp_with_tool()
+        time.sleep(0.5)
+
+        robot.move(PoseObject(*TAPIS_PICK_INTER_INTER_POSE))
+        time.sleep(0.5)
+        
+        robot.move(PoseObject(*TAPIS_PICK_INTER_POSE))
+        time.sleep(0.5)
+
+        # Dépose vers la position cible actuelle (POS1 à POS5)
+        robot.move(PoseObject(*target_pos))
+        time.sleep(0.5)
+        robot.release_with_tool()
+
+        # Dégagement et retour à la pose intermédiaire
+        robot.move(PoseObject(*TAPIS_PICK_INTER_POSE))
+        time.sleep(0.5)
+
+        robot.move(PoseObject(*INTERMEDIAIRE_POSE))
+        time.sleep(0.5)
+
+    # Retour en position initiale une fois les 5 cycles terminés
+    print("Tous les cycles sont terminés. Retour à INITIAL_POSE.")
+    robot.move(PoseObject(*INITIAL_POSE))
 
 except Exception as e:
-    print(f"Impossible de se connecter au robot : {e}")
-    print("Démarrage du serveur web en mode SIMULATION.")
+    print(f"Erreur : {e}")
     ROBOT_CONNECTE = False
     robot = None
     conveyor_id = None
-# ==========================================
-POS2 = (0.108, -0.311, 0.115, -2.466, 1.007, -2.716) 
-POS3 = (0.21, -0.321, 0.087, 2.253, 1.519, 1.602) 
-POS4 = (0.226, 0.092, 0.086, 2.508, 1.32, -3.036) 
-# ==========================================
-
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-# Variables globales pour suivre la commande
-commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
-commande_initiale = {"vert": 0, "rouge": 0, "bleu": 0}
-
-class InfoEnfant(BaseModel):
-    prenom: str
-
-class ChoixEnfant(BaseModel):
-    choixBb: dict
-
-@app.get("/", response_class=HTMLResponse)
-async def afficher_accueil(request: Request):
-    return templates.TemplateResponse(name="index.html", request={"request": request})
-
-@app.post("/saluer")
-def saluer_enfant(enfant: InfoEnfant):
-    time.sleep(1.5)
-    print(f"Nouvelle session pour : {enfant.prenom}")
-    return {"status": "ok", "message": f"Bonjour {enfant.prenom}"}
-
-@app.post('/choix')
-def choix_enfant(choixEnfant: ChoixEnfant):
-    global commande_actuelle, commande_initiale
-    print(f"Commande reçue : {choixEnfant.choixBb}")
-    
-    commande_actuelle = {"vert": 0, "rouge": 0, "bleu": 0}
-    commande_initiale = {"vert": 0, "rouge": 0, "bleu": 0}
-    for couleur, qte in choixEnfant.choixBb.items():
-        commande_actuelle[couleur] = qte
-        commande_initiale[couleur] = qte
-        
-    return {"status": "ok", "message": "Choix reçu, en attente du chargement."}
-
-@app.get('/status_tri')
-def get_status_tri():
-    commande_ramasse = {}
-    for couleur in commande_initiale:
-        commande_ramasse[couleur] = commande_initiale[couleur] - commande_actuelle[couleur]
-        
-    return {
-        "initiale": commande_initiale,
-        "actuelle": commande_actuelle,
-        "ramasse": commande_ramasse
-    }
-
-@app.post('/valider_chargement')
-def demarrer_tri():
-    global commande_actuelle
-    print("L'enfant a cliqué sur 'C'est prêt !'")
-    
-    # ---------------- SIMULATION ----------------
-    if not ROBOT_CONNECTE:
-        print("[SIMULATION] Le tapis roulant démarre virtuellement...")
-        # Simulation progressive de prise des bonbons
-        total_a_prendre = sum(commande_actuelle.values())
-        if total_a_prendre > 15:
-            time.sleep(4)
-            return {
-                "status": "error", 
-                "message": "Oups ! Timeout simulé : je n'ai pas trouvé assez de bonbons !",
-                "details": get_status_tri()
-            }
-            
-        for couleur in ["vert", "rouge", "bleu"]:
-            while commande_actuelle[couleur] > 0:
-                time.sleep(1.5) 
-                commande_actuelle[couleur] -= 1
-                print(f"[SIMULATION] Bonbon {couleur} attrapé ! Reste: {commande_actuelle}")
-
-        img_sim = np.zeros((400, 600, 3), dtype=np.uint8)
-        img_sim[:] = (220, 200, 255)
-        cv2.putText(img_sim, "Mission accomplie !", (80, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (50, 50, 150), 4)
-        _, buffer = cv2.imencode('.jpg', img_sim)
-        photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
-        
-        return {"status": "ok", "message": "Tri terminé !", "photo": photo_b64}
-    
-    robot.move(PoseObject(*OBSERVATION_POSE))
-    # ----------- LOGIQUE RÉELLE ROBOT -----------
-    print("Démarrage du convoyeur (vitesse 50)...")
-    robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
-    
-    time_start = time.time()
-    
-    # Dictionnaire inversé pour lier le retour caméra (ex: GREEN) avec notre code (ex: vert)
-    inv_mapping = {"GREEN": "vert", "RED": "rouge", "BLUE": "bleu"}
-    
-    while sum(commande_actuelle.values()) > 0:
-        if time.time() - time_start > 15:
-            print("Erreur : Timeout de 25s dépassé.")
-            robot.stop_conveyor(conveyor_id)
-            return {
-                "status": "error", 
-                "message": "Oups ! Je n'ai pas trouvé assez de bonbons sur le tapis !",
-                "details": get_status_tri()
-            }
-            
-        try:
-            # On cherche N'IMPORTE QUEL objet sur le tapis
-            has_obj, _, _, obj_color = robot.get_target_pose_from_cam(
-                WORKSPACE_NAME,
-                height_offset=0.0005,
-                shape=ObjectShape.ANY,
-                color=ObjectColor.ANY
-            )
-        except Exception:
-            has_obj = False
-            
-        if has_obj:
-            color_str = obj_color.name 
-            couleur_fr = inv_mapping.get(color_str)
-            
-            # Si on reconnaît la couleur ET qu'il nous en faut encore dans la commande
-            if couleur_fr and commande_actuelle.get(couleur_fr, 0) > 0:
-                print(f"Bonbon {couleur_fr} détecté au loin ! Freinage...")
-                
-                robot.stop_conveyor(conveyor_id)
-                time.sleep(0.5) 
-                
-                # Double vérification sans bouger
-                print("Prise d'une seconde photo pour annuler l'inertie...")
-                try:
-                    has_obj_exact, obj_pose_exact, _, _ = robot.get_target_pose_from_cam(
-                        WORKSPACE_NAME,
-                        height_offset=0.01,
-                        shape=ObjectShape.ANY,
-                        color=ObjectColor.ANY
-                    )
-                    
-                    if has_obj_exact:
-                        print("Position parfaite verrouillée. Application des corrections et prise en cours !")
-                        
-                        # Application des corrections d'offset
-                        obj_pose_exact.x += OFFSET_X
-                        obj_pose_exact.y += OFFSET_Y
-                        obj_pose_exact.z += OFFSET_Z
-                        
-                        robot.pick(obj_pose_exact)
-                        robot.place(PoseObject(*PLATEAU_POSE))
-                        
-                        commande_actuelle[couleur_fr] -= 1
-                        time_start = time.time()
-                    else:
-                        print("Le bonbon a glissé hors de vue, on annule !")
-                
-                    # Retour en observation pour le reste
-                    robot.move(PoseObject(*OBSERVATION_POSE))
-                except Exception as e:
-                    print(f"Erreur lors de la séquence de prise/dépose : {e}")
-                    # En cas d'erreur de trajectoire, on essaie de remonter
-                    try:
-                        robot.move(PoseObject(*OBSERVATION_POSE))
-                    except:
-                        pass
-                
-                if sum(commande_actuelle.values()) > 0:
-                    robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
-        
-        # Petite pause pour ne pas surcharger le processeur
-        time.sleep(0.1)
-
-    
-    print("Tri terminé avec succès !")
-    if ROBOT_CONNECTE:
-        robot.stop_conveyor(conveyor_id)
-        
-    print(" Prise de la photo souvenir...")
-    photo_b64 = None
-    
-    if ROBOT_CONNECTE:
-        try:
-            # On se met en position pour voir le résultat
-            robot.move(PoseObject(*PHOTO_POSE))
-            time.sleep(1) 
-            
-            img_compressed = robot.get_img_compressed()
-            img_cv2 = uncompress_image(img_compressed)
-            
-            # Encodage de l'image OpenCV en base64 pour le web
-            _, buffer = cv2.imencode('.jpg', img_cv2)
-            photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
-        except Exception as e:
-            print(f"Erreur lors de la prise de photo: {e}")
-    else:
-        # Fausse image générée via OpenCV pour le mode simulation
-        img_sim = np.zeros((400, 600, 3), dtype=np.uint8)
-        img_sim[:] = (220, 200, 255) # Fond rose pâle
-        cv2.putText(img_sim, "Mission accomplie !", (80, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (50, 50, 150), 4)
-        _, buffer = cv2.imencode('.jpg', img_sim)
-        photo_b64 = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
-
-    robot.move(PoseObject(*INITIAL_POSE))
-    return {"status": "ok", "message": "Tous les bonbons ont été triés !", "photo": photo_b64}
-
-@app.post('/run_demo')
-def run_didacticiel_demo():
-    print("Exécution de la démo du didacticiel...")
-    if not ROBOT_CONNECTE:
-        time.sleep(3)
-        return {"status": "ok", "message": "Démo simulée terminée !"}
-    
-    try:
-        robot.move(PoseObject(*OBSERVATION_POSE))
-        time.sleep(0.5)
-        
-        robot.move(PoseObject(*POS2))
-        robot.grasp_with_tool()
-        time.sleep(0.5)
-        
-        robot.move(PoseObject(*OBSERVATION_POSE))
-        robot.move(PoseObject(*POS3))
-        robot.release_with_tool()
-        time.sleep(0.5)
-        robot.move(PoseObject(*OBSERVATION_POSE)) 
-        
-        
-        robot.run_conveyor(conveyor_id, speed=50, direction=ConveyorDirection.FORWARD)
-        time.sleep(13)
-        robot.stop_conveyor(conveyor_id)
-        
-        robot.move(PoseObject(*POS4)) 
-        robot.grasp_with_tool()
-        robot.move(PoseObject(*OBSERVATION_POSE))
-        time.sleep(0.5)
-        
-        robot.move(PoseObject(*PLATEAU_POSE_INT)) 
-        robot.move(PoseObject(*PLATEAU_POSE))
-        robot.release_with_tool()
-        time.sleep(0.5)
-        
-        robot.move(PoseObject(*OBSERVATION_POSE))
-        return {"status": "ok", "message": "Démo terminée !"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+finally:
+    if 'robot' in locals() and robot is not None:
+        robot.close_connection()
